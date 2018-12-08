@@ -1,13 +1,11 @@
 package main
 
 import (
-	"bufio"
+	"aoc2018/utils"
 	"fmt"
 	"log"
-	"os"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -22,26 +20,6 @@ func addToSlice(slice []int, value int, startIndex int) []int {
 		slice[i] += value
 	}
 	return slice
-}
-
-func sumArray(arr []int) int {
-	sum := 0
-	for _, elem := range arr {
-		sum += elem
-	}
-	return sum
-}
-
-func findMax(arr []int) (int, int) {
-	ind := -1
-	max := -1
-	for i, elem := range arr {
-		if elem > max {
-			max = elem
-			ind = i
-		}
-	}
-	return ind, max
 }
 
 func extractTimestamp(line string) (time.Time, string) {
@@ -59,39 +37,12 @@ func extractTimestamp(line string) (time.Time, string) {
 	return timestamp, line[messageStartInd:]
 }
 
-func extractGuardID(line string, re *regexp.Regexp) int {
-	matches := re.FindStringSubmatch(line)
-	if len(matches) != 2 {
-		log.Fatal("Couldn't find guard ID for:", line)
-	}
-	id, err := strconv.Atoi(matches[1])
-	if err != nil {
-		panic(err)
-	}
-	return id
-}
-
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatal("Must provide path to input file")
-	}
-	filename := os.Args[1]
-	file, err := os.Open(filename)
-	if err != nil {
-		panic(err)
-	}
-
-	defer func() {
-		if err := file.Close(); err != nil {
-			panic(err)
-		}
-	}()
-
-	reader := bufio.NewReader(file)
-	scanner := bufio.NewScanner(reader)
+	file := utils.OpenFile(utils.GetFilename())
+	defer utils.CloseFile(file)
+	scanner := utils.GetLineScanner(file)
 
 	logEntries := make([]LogEntry, 0)
-
 	guardIDRegex := regexp.MustCompile(" #([0-9]+) ")
 
 	for scanner.Scan() {
@@ -110,7 +61,8 @@ func main() {
 		message := entry.Message
 		minute := entry.Timestamp.Minute()
 		if strings.Contains(message, "begins shift") {
-			activeGuardID = extractGuardID(message, guardIDRegex)
+			activeGuardID = utils.StringToInt(
+				utils.ParseString(message, guardIDRegex, 1)[0])
 			_, present := sleepSchedules[activeGuardID]
 			if !present {
 				sleepSchedules[activeGuardID] = make([]int, 60)
@@ -129,12 +81,12 @@ func main() {
 	sleepiestMinuteOverall := -1
 	guardForSleepistMinuteOverall := -1
 	for guardID, schedule := range sleepSchedules {
-		minutesAsleep := sumArray(schedule)
+		minutesAsleep := utils.SumSlice(&schedule)
 		if minutesAsleep > mostMinutesAsleep {
 			mostMinutesAsleep = minutesAsleep
 			sleepiestGuard = guardID
 		}
-		sleepiestMinute, _ := findMax(schedule)
+		sleepiestMinute, _ := utils.FindSliceMax(&schedule)
 		if sleepiestMinuteOverall < 0 ||
 			guardForSleepistMinuteOverall < 0 ||
 			schedule[sleepiestMinute] > sleepSchedules[guardForSleepistMinuteOverall][sleepiestMinuteOverall] {
@@ -142,7 +94,8 @@ func main() {
 			guardForSleepistMinuteOverall = guardID
 		}
 	}
-	sleepiestMinuteForGuard, _ := findMax(sleepSchedules[sleepiestGuard])
+	sleepiestGuardSchedule := sleepSchedules[sleepiestGuard]
+	sleepiestMinuteForGuard, _ := utils.FindSliceMax(&sleepiestGuardSchedule)
 
 	fmt.Println("PART 1")
 	fmt.Println("Sleepiest guard:", sleepiestGuard)

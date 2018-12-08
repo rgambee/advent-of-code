@@ -1,59 +1,15 @@
 package main
 
 import (
-	"bufio"
+	"aoc2018/utils"
 	"fmt"
-	"log"
-	"os"
 	"regexp"
-	"strconv"
 )
 
-func toInt(s string) int {
-	num, err := strconv.Atoi(s)
-	if err != nil {
-		panic(err)
-	}
-	return num
-}
-
-func parseClaim(claim string, re *regexp.Regexp) (id, startX, startY, width, height int) {
-	matches := re.FindStringSubmatch(claim)
-	if matches == nil {
-		log.Fatal(fmt.Sprintf(
-			"No matches found for string %v and regex %v", claim, re))
-	}
-	// 6 matches expected: one overall match and 5 submatches
-	if len(matches) != 6 {
-		log.Fatal(fmt.Sprintf("Expected 6 matches but found %v"), matches)
-	}
-
-	id = toInt(matches[1])
-	startX = toInt(matches[2])
-	startY = toInt(matches[3])
-	width = toInt(matches[4])
-	height = toInt(matches[5])
-	return
-}
-
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatal("Must provide path to input file")
-	}
-	filename := os.Args[1]
-	file, err := os.Open(filename)
-	if err != nil {
-		panic(err)
-	}
-
-	defer func() {
-		if err := file.Close(); err != nil {
-			panic(err)
-		}
-	}()
-
-	reader := bufio.NewReader(file)
-	scanner := bufio.NewScanner(reader)
+	file := utils.OpenFile(utils.GetFilename())
+	defer utils.CloseFile(file)
+	scanner := utils.GetLineScanner(file)
 
 	// Sample claim format
 	//#1 @ 509,796: 18x15
@@ -68,8 +24,11 @@ func main() {
 	totalMulticlaimedSquares := 0
 	nonOverlappingClaim := make([]bool, 0)
 	for scanner.Scan() {
-		newClaim := scanner.Text()
-		claimID, startX, startY, width, height := parseClaim(newClaim, claimRE)
+		newLine := scanner.Text()
+		parsedLine := utils.ParseString(newLine, claimRE, 5)
+		newClaim := *utils.StringSliceToIntSlice(&parsedLine)
+		claimID, startX, startY := newClaim[0], newClaim[1], newClaim[2]
+		width, height := newClaim[3], newClaim[4]
 		nonOverlappingClaim = append(nonOverlappingClaim, true)
 		for x := startX; x < startX+width; x++ {
 			for y := startY; y < startY+height; y++ {
@@ -85,6 +44,7 @@ func main() {
 			}
 		}
 	}
+
 	fmt.Println("PART 1")
 	fmt.Println("Overlapping square inches:", totalMulticlaimedSquares)
 	fmt.Println()

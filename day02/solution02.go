@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bufio"
+	"aoc2018/utils"
 	"fmt"
-	"log"
-	"os"
 )
 
 func countCharacters(str string) map[rune]int {
@@ -42,23 +40,9 @@ func differByOne(str1, str2 string) bool {
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatal("Must provide path to input file")
-	}
-	filename := os.Args[1]
-	file, err := os.Open(filename)
-	if err != nil {
-		panic(err)
-	}
-
-	defer func() {
-		if err := file.Close(); err != nil {
-			panic(err)
-		}
-	}()
-
-	reader := bufio.NewReader(file)
-	scanner := bufio.NewScanner(reader)
+	file := utils.OpenFile(utils.GetFilename())
+	defer utils.CloseFile(file)
+	scanner := utils.GetLineScanner(file)
 
 	doubles := 0
 	triples := 0
@@ -87,6 +71,7 @@ func main() {
 	fmt.Println("Product:", doubles*triples)
 	fmt.Println()
 	fmt.Println("PART 2")
+	fmt.Println("Desired box IDs are")
 	fmt.Println(desiredId1)
 	fmt.Println(desiredId2)
 }

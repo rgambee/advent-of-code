@@ -1,13 +1,11 @@
 package main
 
 import (
-	"bufio"
+	"aoc2018/utils"
 	"fmt"
 	"log"
 	"math"
-	"os"
 	"regexp"
-	"strconv"
 )
 
 type Point struct {
@@ -103,44 +101,10 @@ func (bbox *BoundingBox) contains(p Point) bool {
 		p.x <= bbox.max.x && p.y <= bbox.max.y)
 }
 
-func toInt(s string) int {
-	num, err := strconv.Atoi(s)
-	if err != nil {
-		panic(err)
-	}
-	return num
-}
-
-func parseCoordinate(s string, re *regexp.Regexp) Coordinate {
-	matches := re.FindStringSubmatch(s)
-	if matches == nil {
-		log.Fatal("No matches found for %v", s)
-	}
-	if len(matches) != 3 {
-		log.Fatal("Expected 3 matches but found %v", matches)
-	}
-	x, y := toInt(matches[1]), toInt(matches[2])
-	return Coordinate{Point{x, y}, 0, Point{x, y}, 0}
-}
-
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatal("Must provide path to input file")
-	}
-	filename := os.Args[1]
-	file, err := os.Open(filename)
-	if err != nil {
-		panic(err)
-	}
-
-	defer func() {
-		if err := file.Close(); err != nil {
-			panic(err)
-		}
-	}()
-
-	reader := bufio.NewReader(file)
-	scanner := bufio.NewScanner(reader)
+	file := utils.OpenFile(utils.GetFilename())
+	defer utils.CloseFile(file)
+	scanner := utils.GetLineScanner(file)
 
 	coordinates := make([]*Coordinate, 0)
 	bbox := BoundingBox{Point{1000, 1000}, Point{-1000, -1000}}
@@ -149,7 +113,9 @@ func main() {
 
 	for scanner.Scan() {
 		newLine := scanner.Text()
-		newCoord := parseCoordinate(newLine, coordinateRegex)
+		parsedLine := utils.ParseString(newLine, coordinateRegex, 2)
+		x, y := utils.StringToInt(parsedLine[0]), utils.StringToInt(parsedLine[1])
+		newCoord := Coordinate{Point{x, y}, 0, Point{x, y}, 0}
 		coordinates = append(coordinates, &newCoord)
 		bbox.update(newCoord.center)
 	}

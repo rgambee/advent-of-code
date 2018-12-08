@@ -1,12 +1,11 @@
 package main
 
 import (
+	"aoc2018/utils"
 	"bufio"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math"
-	"os"
 )
 
 func copySlice(s *[]byte) *[]byte {
@@ -49,21 +48,8 @@ func reactPolymer(polymer *[]byte) {
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatal("Must provide path to input file")
-	}
-	filename := os.Args[1]
-	file, err := os.Open(filename)
-	if err != nil {
-		panic(err)
-	}
-
-	defer func() {
-		if err := file.Close(); err != nil {
-			panic(err)
-		}
-	}()
-
+	file := utils.OpenFile(utils.GetFilename())
+	defer utils.CloseFile(file)
 	reader := bufio.NewReader(file)
 	originalPolymer, err := ioutil.ReadAll(reader)
 	if err != nil {

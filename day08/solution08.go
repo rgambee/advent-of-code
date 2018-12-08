@@ -1,11 +1,10 @@
 package main
 
 import (
+	"aoc2018/utils"
 	"bufio"
 	"fmt"
 	"log"
-	"os"
-	"strconv"
 )
 
 type Node struct {
@@ -13,27 +12,11 @@ type Node struct {
 	metadata []int
 }
 
-func toInt(s string) int {
-	num, err := strconv.Atoi(s)
-	if err != nil {
-		panic(err)
-	}
-	return num
-}
-
-func sumSlice(s []int) int {
-	total := 0
-	for _, n := range s {
-		total += n
-	}
-	return total
-}
-
 func getNextToken(scanner *bufio.Scanner) int {
 	if !scanner.Scan() {
 		log.Panic("Ran out of input")
 	}
-	return toInt(scanner.Text())
+	return utils.StringToInt(scanner.Text())
 }
 
 func newNode(scanner *bufio.Scanner) *Node {
@@ -55,7 +38,7 @@ func newNode(scanner *bufio.Scanner) *Node {
 }
 
 func sumMetadataEntries(node *Node) int {
-	total := sumSlice(node.metadata)
+	total := utils.SumSlice(&node.metadata)
 	for _, c := range node.children {
 		total += sumMetadataEntries(c)
 	}
@@ -77,24 +60,9 @@ func getNodeValue(node *Node) int {
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatal("Must provide path to input file")
-	}
-	filename := os.Args[1]
-	file, err := os.Open(filename)
-	if err != nil {
-		panic(err)
-	}
-
-	defer func() {
-		if err := file.Close(); err != nil {
-			panic(err)
-		}
-	}()
-
-	reader := bufio.NewReader(file)
-	scanner := bufio.NewScanner(reader)
-	scanner.Split(bufio.ScanWords)
+	file := utils.OpenFile(utils.GetFilename())
+	defer utils.CloseFile(file)
+	scanner := utils.GetWordScanner(file)
 	root := newNode(scanner)
 
 	// Add up all metadata entries

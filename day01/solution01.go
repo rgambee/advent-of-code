@@ -1,11 +1,8 @@
 package main
 
 import (
-	"bufio"
+	"aoc2018/utils"
 	"fmt"
-	"log"
-	"os"
-	"strconv"
 )
 
 func isMember(slice []int, value int) bool {
@@ -18,37 +15,23 @@ func isMember(slice []int, value int) bool {
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatal("Must provide path to input file")
-	}
-	filename := os.Args[1]
-	file, err := os.Open(filename)
-	if err != nil {
-		panic(err)
-	}
-
-	defer func() {
-		if err := file.Close(); err != nil {
-			panic(err)
-		}
-	}()
+	file := utils.OpenFile(utils.GetFilename())
+	defer utils.CloseFile(file)
 
 	sum := 0
+	sumAfterFirstPass := 0
 	seenFrequencies := make([]int, 1)
+	firstRepeatedFrequency := -1
 	exit := false
 
 	for iterations := 0; !exit; iterations++ {
 		file.Seek(0, 0)
-		scanner := bufio.NewScanner(file)
+		scanner := utils.GetLineScanner(file)
 		for scanner.Scan() {
-			num, err := strconv.Atoi(scanner.Text())
-			if err != nil {
-				panic(err)
-			}
-			sum += num
+			sum += utils.StringToInt(scanner.Text())
 
 			if isMember(seenFrequencies, sum) {
-				fmt.Println(sum)
+				firstRepeatedFrequency = sum
 				exit = true
 				break
 			} else {
@@ -56,7 +39,13 @@ func main() {
 			}
 		}
 		if (iterations == 0) && (!exit) {
-			fmt.Println("Sum after first pass:", sum)
+			sumAfterFirstPass = sum
 		}
 	}
+
+	fmt.Println("PART 1")
+	fmt.Println("Sum after first pass:", sumAfterFirstPass)
+	fmt.Println("")
+	fmt.Println("PART 2")
+	fmt.Println("First repeated frequency:", firstRepeatedFrequency)
 }

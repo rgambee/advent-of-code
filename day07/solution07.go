@@ -1,10 +1,9 @@
 package main
 
 import (
-	"bufio"
+	"aoc2018/utils"
 	"fmt"
 	"log"
-	"os"
 	"regexp"
 )
 
@@ -78,48 +77,24 @@ func getTimeForTask(taskName string) int {
 	return taskNum + 60
 }
 
-func parseLine(line string, re *regexp.Regexp) (string, string) {
-	matches := re.FindStringSubmatch(line)
-	if matches == nil {
-		log.Fatal("No matches found for %v", line)
-	}
-	if len(matches) != 3 {
-		log.Fatal("Expected 3 matches but found %v", matches)
-	}
-	return matches[1], matches[2]
-}
-
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatal("Must provide path to input file")
-	}
-	filename := os.Args[1]
-	file, err := os.Open(filename)
-	if err != nil {
-		panic(err)
-	}
-
-	defer func() {
-		if err := file.Close(); err != nil {
-			panic(err)
-		}
-	}()
+	file := utils.OpenFile(utils.GetFilename())
+	defer utils.CloseFile(file)
+	scanner := utils.GetLineScanner(file)
 
 	re := regexp.MustCompile("Step ([A-Z]) .* before step ([A-Z]) .*")
 
-	reader := bufio.NewReader(file)
-	scanner := bufio.NewScanner(reader)
-
-	tree := &Node{"", make([]*Node, 0)}
+	root := &Node{"", make([]*Node, 0)}
 	for scanner.Scan() {
 		newLine := scanner.Text()
-		earlierStep, laterStep := parseLine(newLine, re)
-		// Need to update tree such that earlierStep comes before laterStep
-		earlierNode := tree.find(earlierStep)
-		laterNode := tree.find(laterStep)
+		parsedLine := utils.ParseString(newLine, re, 2)
+		earlierStep, laterStep := parsedLine[0], parsedLine[1]
+		// Need to update root such that earlierStep comes before laterStep
+		earlierNode := root.find(earlierStep)
+		laterNode := root.find(laterStep)
 		if earlierNode == nil {
 			earlierNode = &Node{earlierStep, make([]*Node, 0)}
-			tree.addChild(earlierNode)
+			root.addChild(earlierNode)
 		}
 		if laterNode == nil {
 			laterNode = &Node{laterStep, make([]*Node, 0)}
@@ -131,16 +106,16 @@ func main() {
 			log.Panic("Earlier step does not come before later step")
 		}
 	}
-	treeCopy := tree.copy()
+	rootCopy := root.copy()
 
-	// Iterate over tree
+	// Iterate over root
 	orderedSteps := make([]string, 0)
-	for len(tree.children) > 0 {
-		for i := 0; i < len(tree.children); {
-			candidateStep := tree.children[i].name
+	for len(root.children) > 0 {
+		for i := 0; i < len(root.children); {
+			candidateStep := root.children[i].name
 			// Check whether any other steps are a prerequisite for candidateStep
 			safeToRemove := true
-			for j, c := range tree.children {
+			for j, c := range root.children {
 				if i == j {
 					continue
 				}
@@ -151,7 +126,7 @@ func main() {
 			}
 			if safeToRemove {
 				orderedSteps = append(orderedSteps, candidateStep)
-				tree.deleteChild(tree.children[i])
+				root.deleteChild(root.children[i])
 				i = 0
 			} else {
 				i++
@@ -160,15 +135,15 @@ func main() {
 	}
 
 	// Find time to complete tasks
-	tree = treeCopy.copy()
+	root = rootCopy.copy()
 	seconds := 0
 	activeSteps := make(map[*Node]int)
-	for len(tree.children) > 0 {
-		for i := 0; i < len(tree.children); i++ {
-			candidateStep := tree.children[i].name
+	for len(root.children) > 0 {
+		for i := 0; i < len(root.children); i++ {
+			candidateStep := root.children[i].name
 			// Check whether any other steps are a prerequisite for candidateStep
 			safeToRemove := true
-			for j, c := range tree.children {
+			for j, c := range root.children {
 				if i == j {
 					continue
 				}
@@ -178,16 +153,16 @@ func main() {
 				}
 			}
 			if safeToRemove {
-				if _, present := activeSteps[tree.children[i]]; !present {
+				if _, present := activeSteps[root.children[i]]; !present {
 					// Make this step active
-					activeSteps[tree.children[i]] = getTimeForTask(candidateStep)
+					activeSteps[root.children[i]] = getTimeForTask(candidateStep)
 				}
 			}
 		}
 		for node := range activeSteps {
 			activeSteps[node]--
 			if activeSteps[node] <= 0 {
-				tree.deleteChild(node)
+				root.deleteChild(node)
 				delete(activeSteps, node)
 			}
 		}
