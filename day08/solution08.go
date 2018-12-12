@@ -1,9 +1,9 @@
 package main
 
 import (
-	"aoc2018/utils"
 	"bufio"
 	"fmt"
+	"github.com/rgambee/aoc2018/utils"
 	"log"
 )
 

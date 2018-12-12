@@ -1,9 +1,9 @@
 package main
 
 import (
-	"aoc2018/utils"
 	"container/ring"
 	"fmt"
+	"github.com/rgambee/aoc2018/utils"
 	"regexp"
 )
 

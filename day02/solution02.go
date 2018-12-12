@@ -1,8 +1,8 @@
 package main
 
 import (
-	"aoc2018/utils"
 	"fmt"
+	"github.com/rgambee/aoc2018/utils"
 )
 
 func countCharacters(str string) map[rune]int {
