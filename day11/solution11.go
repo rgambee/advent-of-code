@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/rgambee/aoc2018/utils"
 )
 
 const (
@@ -10,15 +11,9 @@ const (
 )
 
 func main() {
-	grid := make([][]int, GRID_SIZE)
-	for i := range grid {
-		grid[i] = make([]int, GRID_SIZE)
-	}
+	grid := *(utils.MakeSquareIntSlice(GRID_SIZE))
 	// summedAreaTable contians sum of all cells above and to the left
-	summedAreaTable := make([][]int, GRID_SIZE+1)
-	for i := range summedAreaTable {
-		summedAreaTable[i] = make([]int, GRID_SIZE+1)
-	}
+	summedAreaTable := *(utils.MakeSquareIntSlice(GRID_SIZE + 1))
 
 	for x := range grid {
 		for y := range grid[x] {

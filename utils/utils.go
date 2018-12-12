@@ -96,6 +96,18 @@ func FindSliceMax(slice *[]int) (index, max int) {
 	return
 }
 
+func MakeSquareIntSlice(size int) *[][]int {
+	return MakeRectIntSlice(size, size)
+}
+
+func MakeRectIntSlice(size0, size1 int) *[][]int {
+	slice := make([][]int, size0)
+	for i := range slice {
+		slice[i] = make([]int, size1)
+	}
+	return &slice
+}
+
 func AbsInt(n int) int {
 	return int(math.Abs(float64(n)))
 }
