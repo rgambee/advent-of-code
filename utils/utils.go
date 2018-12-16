@@ -86,7 +86,7 @@ func SumSlice(slice *[]int) int {
 
 func FindSliceMax(slice *[]int) (index, max int) {
 	index = -1
-	max = -1
+	max = -(1 << 31)
 	for i, elem := range *slice {
 		if elem > max {
 			max = elem
@@ -94,6 +94,28 @@ func FindSliceMax(slice *[]int) (index, max int) {
 		}
 	}
 	return
+}
+
+func FindMax(nums ...int) int {
+	_, max := FindSliceMax(&nums)
+	return max
+}
+
+func FindSliceMin(slice *[]int) (index, min int) {
+	index = -1
+	min = 1<<31 - 1
+	for i, elem := range *slice {
+		if elem < min {
+			min = elem
+			index = i
+		}
+	}
+	return
+}
+
+func FindMin(nums ...int) int {
+	_, min := FindSliceMin(&nums)
+	return min
 }
 
 func MakeSquareIntSlice(size int) *[][]int {
