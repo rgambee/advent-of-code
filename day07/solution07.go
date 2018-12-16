@@ -87,7 +87,10 @@ func main() {
 	root := &Node{"", make([]*Node, 0)}
 	for scanner.Scan() {
 		newLine := scanner.Text()
-		parsedLine := utils.ParseString(newLine, re, 2)
+		parsedLine, err := utils.ParseString(newLine, re, 2)
+		if err != nil {
+			panic(err)
+		}
 		earlierStep, laterStep := parsedLine[0], parsedLine[1]
 		// Need to update root such that earlierStep comes before laterStep
 		earlierNode := root.find(earlierStep)

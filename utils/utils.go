@@ -2,6 +2,8 @@ package utils
 
 import (
 	"bufio"
+	"errors"
+	"fmt"
 	"image"
 	"log"
 	"math"
@@ -47,17 +49,18 @@ func GetScanner(file *os.File, split bufio.SplitFunc) *bufio.Scanner {
 	return scanner
 }
 
-func ParseString(s string, re *regexp.Regexp, expectedMatches int) []string {
+func ParseString(s string, re *regexp.Regexp, expectedMatches int) ([]string, error) {
 	matches := re.FindStringSubmatch(s)
 	if matches == nil {
-		log.Fatal("No matches found for ", s)
+		return nil, errors.New(fmt.Sprintf("No matches found for '%v'", s))
 	}
 	// First element of matches is the match for the entire regexp,
 	// which we don't care about
 	if len(matches) != expectedMatches+1 {
-		log.Fatal("Expected %v matches but found %v", expectedMatches, len(matches)-1)
+		return nil, errors.New(fmt.Sprintf(
+			"Expected %v matches but found %v", expectedMatches, len(matches)-1))
 	}
-	return matches[1:]
+	return matches[1:], nil
 }
 
 func StringToInt(s string) int {

@@ -21,7 +21,10 @@ func main() {
 	re := regexp.MustCompile("([0-9]+) players; last marble is worth ([0-9]+) points")
 
 	for part := 1; scanner.Scan(); part++ {
-		gameFormat := utils.ParseString(scanner.Text(), re, 2)
+		gameFormat, err := utils.ParseString(scanner.Text(), re, 2)
+		if err != nil {
+			panic(err)
+		}
 		numPlayers := utils.StringToInt(gameFormat[0])
 		lastMarbleValue := utils.StringToInt(gameFormat[1])
 

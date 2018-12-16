@@ -93,8 +93,11 @@ func main() {
 	plantPots := make(map[int]bool)
 	scanner.Scan()
 	initialStateRE := regexp.MustCompile("initial state: ([.#]+)")
-	initialStateString := utils.ParseString(scanner.Text(), initialStateRE, 1)[0]
-	for i, char := range initialStateString {
+	initialStateString, err := utils.ParseString(scanner.Text(), initialStateRE, 1)
+	if err != nil {
+		panic(err)
+	}
+	for i, char := range initialStateString[0] {
 		plantPots[i] = runeToBool(char)
 	}
 	// Skip over blank line
@@ -104,7 +107,10 @@ func main() {
 	ruleRE := regexp.MustCompile("([.#]{5}) => ([.#])")
 	rules := RuleNode{false, make(map[bool]*RuleNode)}
 	for scanner.Scan() {
-		newRule := utils.ParseString(scanner.Text(), ruleRE, 2)
+		newRule, err := utils.ParseString(scanner.Text(), ruleRE, 2)
+		if err != nil {
+			panic(err)
+		}
 		plantConfig, result := newRule[0], newRule[1]
 		rules.insertRule(parseRule(plantConfig, result))
 	}

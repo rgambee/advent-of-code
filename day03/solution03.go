@@ -25,7 +25,10 @@ func main() {
 	nonOverlappingClaim := make([]bool, 0)
 	for scanner.Scan() {
 		newLine := scanner.Text()
-		parsedLine := utils.ParseString(newLine, claimRE, 5)
+		parsedLine, err := utils.ParseString(newLine, claimRE, 5)
+		if err != nil {
+			panic(err)
+		}
 		newClaim := *utils.StringSliceToIntSlice(&parsedLine)
 		claimID, startX, startY := newClaim[0], newClaim[1], newClaim[2]
 		width, height := newClaim[3], newClaim[4]

@@ -94,7 +94,10 @@ func main() {
 	spots := make([]LightSpot, 0)
 	for scanner.Scan() {
 		newLine := scanner.Text()
-		parsedLine := utils.ParseString(newLine, re, 4)
+		parsedLine, err := utils.ParseString(newLine, re, 4)
+		if err != nil {
+			panic(err)
+		}
 		spotData := *utils.StringSliceToIntSlice(&parsedLine)
 		posX, posY, velX, velY := spotData[0], spotData[1], spotData[2], spotData[3]
 		newSpot := LightSpot{utils.NewPoint2D(posX, posY),

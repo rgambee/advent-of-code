@@ -90,7 +90,10 @@ func main() {
 
 	for scanner.Scan() {
 		newLine := scanner.Text()
-		parsedLine := utils.ParseString(newLine, coordinateRegex, 2)
+		parsedLine, err := utils.ParseString(newLine, coordinateRegex, 2)
+		if err != nil {
+			panic(err)
+		}
 		x, y := utils.StringToInt(parsedLine[0]), utils.StringToInt(parsedLine[1])
 		newCoord := Coordinate{utils.NewPoint2D(x, y), 0, utils.NewPoint2D(x, y), 0}
 		coordinates = append(coordinates, &newCoord)

@@ -61,8 +61,11 @@ func main() {
 		message := entry.Message
 		minute := entry.Timestamp.Minute()
 		if strings.Contains(message, "begins shift") {
-			activeGuardID = utils.StringToInt(
-				utils.ParseString(message, guardIDRegex, 1)[0])
+			parsed, err := utils.ParseString(message, guardIDRegex, 1)
+			if err != nil {
+				panic(err)
+			}
+			activeGuardID = utils.StringToInt(parsed[0])
 			_, present := sleepSchedules[activeGuardID]
 			if !present {
 				sleepSchedules[activeGuardID] = make([]int, 60)
