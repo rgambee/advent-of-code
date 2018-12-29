@@ -3,6 +3,7 @@ package utils
 import (
 	"bufio"
 	"log"
+	"math"
 	"os"
 	"regexp"
 	"strconv"
@@ -92,4 +93,8 @@ func FindSliceMax(slice *[]int) (index, max int) {
 		}
 	}
 	return
+}
+
+func AbsInt(n int) int {
+	return int(math.Abs(float64(n)))
 }
