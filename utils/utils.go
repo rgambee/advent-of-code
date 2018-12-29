@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bufio"
+	"image"
 	"log"
 	"math"
 	"os"
@@ -97,4 +98,51 @@ func FindSliceMax(slice *[]int) (index, max int) {
 
 func AbsInt(n int) int {
 	return int(math.Abs(float64(n)))
+}
+
+type Point2D struct {
+	image.Point
+}
+
+func NewPoint2D(x, y int) Point2D {
+	return Point2D{image.Point{x, y}}
+}
+
+func (p1 *Point2D) DistanceTo(p2 Point2D) int {
+	// Manhattan distance
+	return AbsInt(p1.X-p2.X) + AbsInt(p1.Y-p2.Y)
+}
+
+type BoundingBox2D struct {
+	*image.Rectangle
+}
+
+func NewBoundingBox2D(min, max Point2D) BoundingBox2D {
+	return BoundingBox2D{&image.Rectangle{
+		image.Point{min.X, min.Y},
+		image.Point{max.X, max.Y}}}
+}
+
+func (bbox *BoundingBox2D) Update(p Point2D) {
+	// Inclusive at both min and max (unlike image.Rectangle)
+	if p.X < bbox.Min.X {
+		bbox.Min.X = p.X
+	} else if p.X > bbox.Max.X {
+		bbox.Max.X = p.X
+	}
+	if p.Y < bbox.Min.Y {
+		bbox.Min.Y = p.Y
+	} else if p.Y > bbox.Max.Y {
+		bbox.Max.Y = p.Y
+	}
+}
+
+func (bbox *BoundingBox2D) GetArea() int {
+	return bbox.Dx() * bbox.Dy()
+}
+
+func (bbox *BoundingBox2D) Contains(p Point2D) bool {
+	// Inclusive at both min and max (unlike image.Rectangle)
+	return (p.X >= bbox.Min.X && p.Y >= bbox.Min.Y &&
+		p.X <= bbox.Max.X && p.Y <= bbox.Max.Y)
 }
