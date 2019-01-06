@@ -4,23 +4,13 @@ import (
 	"aoc2018/utils"
 	"fmt"
 	"log"
-	"math"
 	"regexp"
 )
 
-type Point struct {
-	x, y int
-}
-
-func distance(p1, p2 Point) int {
-	// Manhattan distance
-	return int(math.Abs(float64(p1.x-p2.x)) + math.Abs(float64(p1.y-p2.y)))
-}
-
 type Coordinate struct {
-	center          Point
+	center          utils.Point2D
 	area            int
-	nextSpiralPoint Point
+	nextSpiralPoint utils.Point2D
 	spiralRadius    int
 }
 
@@ -29,7 +19,7 @@ type GridCell struct {
 	distance     int
 }
 
-func (coord *Coordinate) spiralOutward() Point {
+func (coord *Coordinate) spiralOutward() utils.Point2D {
 	// Counter-clockwise spiral out of point A
 	// v<<<^
 	// vv<^^
@@ -37,68 +27,54 @@ func (coord *Coordinate) spiralOutward() Point {
 	// v>>^^
 	// v>>>^
 	previousSpiralPoint := coord.nextSpiralPoint
-	var nextSpiralPoint Point
+	var nextSpiralPoint utils.Point2D
 
 	// Check whether we're at a corner
-	if previousSpiralPoint.x == coord.center.x+coord.spiralRadius &&
-		previousSpiralPoint.y == coord.center.y+coord.spiralRadius {
+	if previousSpiralPoint.X == coord.center.X+coord.spiralRadius &&
+		previousSpiralPoint.Y == coord.center.Y+coord.spiralRadius {
 		// Top-left corner: increase radius and continue moving in +y direction
 		coord.spiralRadius++
-		nextSpiralPoint = Point{previousSpiralPoint.x, previousSpiralPoint.y + 1}
-	} else if previousSpiralPoint.x == coord.center.x-coord.spiralRadius &&
-		previousSpiralPoint.y == coord.center.y+coord.spiralRadius {
+		nextSpiralPoint = utils.NewPoint2D(
+			previousSpiralPoint.X, previousSpiralPoint.Y+1)
+	} else if previousSpiralPoint.X == coord.center.X-coord.spiralRadius &&
+		previousSpiralPoint.Y == coord.center.Y+coord.spiralRadius {
 		// Top-left corner: start moving in -y direction
-		nextSpiralPoint = Point{previousSpiralPoint.x, previousSpiralPoint.y - 1}
-	} else if previousSpiralPoint.x == coord.center.x-coord.spiralRadius &&
-		previousSpiralPoint.y == coord.center.y-coord.spiralRadius {
+		nextSpiralPoint = utils.NewPoint2D(
+			previousSpiralPoint.X, previousSpiralPoint.Y-1)
+	} else if previousSpiralPoint.X == coord.center.X-coord.spiralRadius &&
+		previousSpiralPoint.Y == coord.center.Y-coord.spiralRadius {
 		// Bottom-left corner: start moving in +x direction
-		nextSpiralPoint = Point{previousSpiralPoint.x + 1, previousSpiralPoint.y}
-	} else if previousSpiralPoint.x == coord.center.x+coord.spiralRadius &&
-		previousSpiralPoint.y == coord.center.y-coord.spiralRadius {
+		nextSpiralPoint = utils.NewPoint2D(
+			previousSpiralPoint.X+1, previousSpiralPoint.Y)
+	} else if previousSpiralPoint.X == coord.center.X+coord.spiralRadius &&
+		previousSpiralPoint.Y == coord.center.Y-coord.spiralRadius {
 		// Bottom-right corner: start moving in +y direction
-		nextSpiralPoint = Point{previousSpiralPoint.x, previousSpiralPoint.y + 1}
+		nextSpiralPoint = utils.NewPoint2D(
+			previousSpiralPoint.X, previousSpiralPoint.Y+1)
 
 		// If we're not at a corner, figure out what side we're on
-	} else if previousSpiralPoint.x == coord.center.x+coord.spiralRadius {
+	} else if previousSpiralPoint.X == coord.center.X+coord.spiralRadius {
 		// Right edge: continue moving in +y direction
-		nextSpiralPoint = Point{previousSpiralPoint.x, previousSpiralPoint.y + 1}
-	} else if previousSpiralPoint.y == coord.center.y+coord.spiralRadius {
+		nextSpiralPoint = utils.NewPoint2D(
+			previousSpiralPoint.X, previousSpiralPoint.Y+1)
+	} else if previousSpiralPoint.Y == coord.center.Y+coord.spiralRadius {
 		// Top edge: continue moving in -x direction
-		nextSpiralPoint = Point{previousSpiralPoint.x - 1, previousSpiralPoint.y}
-	} else if previousSpiralPoint.x == coord.center.x-coord.spiralRadius {
+		nextSpiralPoint = utils.NewPoint2D(
+			previousSpiralPoint.X-1, previousSpiralPoint.Y)
+	} else if previousSpiralPoint.X == coord.center.X-coord.spiralRadius {
 		// Left edge: continue moving in -y direction
-		nextSpiralPoint = Point{previousSpiralPoint.x, previousSpiralPoint.y - 1}
-	} else if previousSpiralPoint.y == coord.center.y-coord.spiralRadius {
+		nextSpiralPoint = utils.NewPoint2D(
+			previousSpiralPoint.X, previousSpiralPoint.Y-1)
+	} else if previousSpiralPoint.Y == coord.center.Y-coord.spiralRadius {
 		// Bottom edge: continue moving in +x direction
-		nextSpiralPoint = Point{previousSpiralPoint.x + 1, previousSpiralPoint.y}
+		nextSpiralPoint = utils.NewPoint2D(
+			previousSpiralPoint.X+1, previousSpiralPoint.Y)
 	} else {
-		log.Fatal("Spiral error for Coordinate", coord)
+		log.Panic("Spiral error for Coordinate", coord)
 	}
 
 	coord.nextSpiralPoint = nextSpiralPoint
 	return previousSpiralPoint
-}
-
-type BoundingBox struct {
-	min, max Point
-}
-
-func (bbox *BoundingBox) update(p Point) {
-	if p.x < bbox.min.x {
-		bbox.min.x = p.x
-	} else if p.x > bbox.max.x {
-		bbox.max.x = p.x
-	}
-	if p.y < bbox.min.y {
-		bbox.min.y = p.y
-	} else if p.y > bbox.max.y {
-		bbox.max.y = p.y
-	}
-}
-
-func (bbox *BoundingBox) contains(p Point) bool {
-	return (p.x >= bbox.min.x && p.y >= bbox.min.y &&
-		p.x <= bbox.max.x && p.y <= bbox.max.y)
 }
 
 func main() {
@@ -107,7 +83,8 @@ func main() {
 	scanner := utils.GetLineScanner(file)
 
 	coordinates := make([]*Coordinate, 0)
-	bbox := BoundingBox{Point{1000, 1000}, Point{-1000, -1000}}
+	bbox := utils.NewBoundingBox2D(
+		utils.NewPoint2D(1000, 1000), utils.NewPoint2D(-1000, -1000))
 
 	coordinateRegex := regexp.MustCompile("([0-9]+), ([0-9]+)")
 
@@ -115,32 +92,32 @@ func main() {
 		newLine := scanner.Text()
 		parsedLine := utils.ParseString(newLine, coordinateRegex, 2)
 		x, y := utils.StringToInt(parsedLine[0]), utils.StringToInt(parsedLine[1])
-		newCoord := Coordinate{Point{x, y}, 0, Point{x, y}, 0}
+		newCoord := Coordinate{utils.NewPoint2D(x, y), 0, utils.NewPoint2D(x, y), 0}
 		coordinates = append(coordinates, &newCoord)
-		bbox.update(newCoord.center)
+		bbox.Update(newCoord.center)
 	}
 
-	if bbox.min.x < 0 || bbox.min.y < 0 {
-		log.Fatal("Bounding box extends into negative territory")
+	if bbox.Min.X < 0 || bbox.Min.Y < 0 {
+		log.Panic("Bounding box extends into negative territory")
 	}
 
-	grid := make([][]*GridCell, bbox.max.x+1)
+	grid := make([][]*GridCell, bbox.Max.X+1)
 	for x := range grid {
-		grid[x] = make([]*GridCell, bbox.max.y+1)
+		grid[x] = make([]*GridCell, bbox.Max.Y+1)
 	}
 
 	for _, coord := range coordinates {
 		lastUpdatedRadius := 0
 		for coord.spiralRadius <= lastUpdatedRadius+1 {
 			currPoint := coord.spiralOutward()
-			if !bbox.contains(currPoint) {
+			if !bbox.Contains(currPoint) {
 				continue
 			}
-			dist := distance(currPoint, coord.center)
-			if grid[currPoint.x][currPoint.y] == nil {
-				grid[currPoint.x][currPoint.y] = &GridCell{nil, 0}
+			dist := currPoint.DistanceTo(coord.center)
+			if grid[currPoint.X][currPoint.Y] == nil {
+				grid[currPoint.X][currPoint.Y] = &GridCell{nil, 0}
 			}
-			cell := grid[currPoint.x][currPoint.y]
+			cell := grid[currPoint.X][currPoint.Y]
 			if (cell.nearestCoord == nil && cell.distance == 0) ||
 				dist < cell.distance {
 				if cell.nearestCoord != nil {
@@ -152,7 +129,7 @@ func main() {
 				lastUpdatedRadius = coord.spiralRadius
 			} else if dist == cell.distance {
 				if coord == cell.nearestCoord {
-					log.Fatal("Returned to cell multiple times")
+					log.Panic("Returned to cell multiple times")
 				}
 				if cell.nearestCoord != nil {
 					cell.nearestCoord.area--
@@ -163,20 +140,20 @@ func main() {
 	}
 
 	// Loop around edges and discard adjacent coords
-	for x := bbox.min.x; x <= bbox.max.x; x++ {
-		if grid[x][bbox.min.y].nearestCoord != nil {
-			grid[x][bbox.min.y].nearestCoord.area = -1
+	for x := bbox.Min.X; x <= bbox.Max.X; x++ {
+		if grid[x][bbox.Min.Y].nearestCoord != nil {
+			grid[x][bbox.Min.Y].nearestCoord.area = -1
 		}
-		if grid[x][bbox.max.y].nearestCoord != nil {
-			grid[x][bbox.max.y].nearestCoord.area = -1
+		if grid[x][bbox.Max.Y].nearestCoord != nil {
+			grid[x][bbox.Max.Y].nearestCoord.area = -1
 		}
 	}
-	for y := bbox.min.y; y <= bbox.max.y; y++ {
-		if grid[bbox.min.x][y].nearestCoord != nil {
-			grid[bbox.min.x][y].nearestCoord.area = -1
+	for y := bbox.Min.Y; y <= bbox.Max.Y; y++ {
+		if grid[bbox.Min.X][y].nearestCoord != nil {
+			grid[bbox.Min.X][y].nearestCoord.area = -1
 		}
-		if grid[bbox.max.x][y].nearestCoord != nil {
-			grid[bbox.max.x][y].nearestCoord.area = -1
+		if grid[bbox.Max.X][y].nearestCoord != nil {
+			grid[bbox.Max.X][y].nearestCoord.area = -1
 		}
 	}
 
@@ -189,11 +166,11 @@ func main() {
 
 	summedDistanceLimit := 10000
 	areaUnderLimit := 0
-	for x := bbox.min.x; x <= bbox.max.x; x++ {
-		for y := bbox.min.y; y <= bbox.max.y; y++ {
+	for x := bbox.Min.X; x <= bbox.Max.X; x++ {
+		for y := bbox.Min.Y; y <= bbox.Max.Y; y++ {
 			summedDistance := 0
 			for _, coord := range coordinates {
-				summedDistance += distance(Point{x, y}, coord.center)
+				summedDistance += coord.center.DistanceTo(utils.NewPoint2D(x, y))
 			}
 			if summedDistance <= summedDistanceLimit {
 				areaUnderLimit++
