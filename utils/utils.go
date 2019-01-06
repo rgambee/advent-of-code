@@ -7,6 +7,7 @@ import (
 	"image"
 	"log"
 	"math"
+	"math/big"
 	"os"
 	"regexp"
 	"strconv"
@@ -182,4 +183,85 @@ func (bbox *BoundingBox2D) Contains(p Point2D) bool {
 	// Inclusive at both min and max (unlike image.Rectangle)
 	return (p.X >= bbox.Min.X && p.Y >= bbox.Min.Y &&
 		p.X <= bbox.Max.X && p.Y <= bbox.Max.Y)
+}
+
+type Point3D struct {
+	X, Y, Z int
+}
+
+func (p1 *Point3D) DistanceTo(p2 Point3D) int {
+	return AbsInt(p1.X-p2.X) + AbsInt(p1.Y-p2.Y) + AbsInt(p1.Z-p2.Z)
+}
+
+func (p1 *Point3D) Translate(p2 Point3D) {
+	p1.X += p2.X
+	p1.Y += p2.Y
+	p1.Z += p2.Z
+}
+
+type BoundingBox3D struct {
+	Min, Max Point3D
+}
+
+func (bbox *BoundingBox3D) Update(p Point3D) {
+	if p.X < bbox.Min.X {
+		bbox.Min.X = p.X
+	}
+	if p.Y < bbox.Min.Y {
+		bbox.Min.Y = p.Y
+	}
+	if p.Z < bbox.Min.Z {
+		bbox.Min.Z = p.Z
+	}
+	if p.X > bbox.Max.X {
+		bbox.Max.X = p.X
+	}
+	if p.Y > bbox.Max.Y {
+		bbox.Max.Y = p.Y
+	}
+	if p.Z > bbox.Max.Z {
+		bbox.Max.Z = p.Z
+	}
+}
+
+func (bbox *BoundingBox3D) Contains(p Point3D) bool {
+	return (bbox.Min.X <= p.X && p.X <= bbox.Max.X &&
+		bbox.Min.Y <= p.Y && p.Y <= bbox.Max.Y &&
+		bbox.Min.Z <= p.Z && p.Z <= bbox.Max.Z)
+}
+
+func (bbox *BoundingBox3D) Translate(p Point3D) {
+	bbox.Min.Translate(p)
+	bbox.Max.Translate(p)
+}
+
+func (bbox *BoundingBox3D) GetVolume() *big.Int {
+	minX := big.NewInt(int64(bbox.Min.X))
+	maxX := big.NewInt(int64(bbox.Max.X))
+	minY := big.NewInt(int64(bbox.Min.Y))
+	maxY := big.NewInt(int64(bbox.Max.Y))
+	minZ := big.NewInt(int64(bbox.Min.Z))
+	maxZ := big.NewInt(int64(bbox.Max.Z))
+	vol := big.NewInt(1)
+	vol.Mul(maxX.Sub(maxX, minX), maxY.Sub(maxY, minY))
+	vol.Mul(vol, maxZ.Sub(maxZ, minZ))
+	return vol
+}
+
+func (bbox *BoundingBox3D) GetCorners() [8]Point3D {
+	corners := [8]Point3D{}
+	for i := range corners {
+		newCorner := bbox.Min
+		if i%2 == 1 {
+			newCorner.Translate(Point3D{bbox.Max.X - bbox.Min.X, 0, 0})
+		}
+		if (i/2)%2 == 1 {
+			newCorner.Translate(Point3D{0, bbox.Max.Y - bbox.Min.Y, 0})
+		}
+		if (i/4)%2 == 1 {
+			newCorner.Translate(Point3D{0, 0, bbox.Max.Z - bbox.Min.Z})
+		}
+		corners[i] = newCorner
+	}
+	return corners
 }
