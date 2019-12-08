@@ -91,6 +91,16 @@ void check_index(int index, const std::vector<int> &numbers) {
 int run_intcode_program(std::vector<int> numbers,
                         std::istream &input,
                         std::ostream &output) {
+    return run_intcode_program(
+        numbers,
+        [&input]() -> int {int val = -1; input >> val; return val;},
+        [&output](int val) -> void {output << val;});
+}
+
+
+int run_intcode_program(std::vector<int> numbers,
+                        std::function<int()> input,
+                        std::function<void(int)> output) {
     for (std::vector<int>::size_type i = 0; i < numbers.size();) {
         auto opcode = int_to_opcode(numbers[i]);
         switch (opcode) {
@@ -112,15 +122,15 @@ int run_intcode_program(std::vector<int> numbers,
                 }
                 switch (opcode) {
                     case Opcode::INPUT:
-                        input >> numbers[parameter];
+                        numbers[parameter] = input();
                         break;
                     case Opcode::OUTPUT:
                         switch (modes[0]) {
                             case Mode::POSITIONAL:
-                                output << numbers[parameter];
+                                output(numbers[parameter]);
                                 break;
                             case Mode::IMMEDIATE:
-                                output << parameter;
+                                output(parameter);
                                 break;
                             default:
                                 std::cerr << "Unexpected mode: " << static_cast<int>(modes[0]) << std::endl;

@@ -1,4 +1,5 @@
 #include <fstream>
+#include <functional>
 #include <istream>
 #include <iostream>
 #include <ostream>
@@ -32,3 +33,7 @@ std::vector<int> load_intcode_program(std::istream &input_stream);
 int run_intcode_program(std::vector<int> numbers,
                         std::istream &input = std::cin,
                         std::ostream &output = std::cout);
+
+int run_intcode_program(std::vector<int> numbers,
+                        std::function<int()> input,
+                        std::function<void(int)> output);
