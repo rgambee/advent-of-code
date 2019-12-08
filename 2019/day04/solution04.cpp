@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
         std::array<int, 10> digit_counts{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         int prev_digit = -1;
         for (int place = 5; place >= 0; --place) {
-            int digit = (password / int(std::round(std::pow(10, place)))) % 10;
+            int digit = (password / static_cast<int>(std::round(std::pow(10, place)))) % 10;
             ++digit_counts[digit];
             if (digit < prev_digit) {
                 sorted = false;

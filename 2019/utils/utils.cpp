@@ -53,7 +53,7 @@ std::vector<Mode> int_to_modes(int integer, int num_operands) {
     std::vector<Mode> result(num_operands, Mode::POSITIONAL);
     integer /= 100;     // Remove opcode (trailing two digits)
     for (auto place = 0; place < num_operands; place++) {
-        int digit = (integer / int(std::round(std::pow(10, place)))) % 10;
+        int digit = (integer / static_cast<int>(std::round(std::pow(10, place)))) % 10;
         switch(digit) {
             case 0:
                 result[place] = Mode::POSITIONAL;
@@ -81,7 +81,7 @@ std::vector<int> load_intcode_program(std::istream &input_stream) {
 
 
 void check_index(int index, const std::vector<int> &numbers) {
-    if (index < 0 || int(numbers.size()) <= index) {
+    if (index < 0 || static_cast<int>(numbers.size()) <= index) {
         std::cerr << "Index out of range: " << index << std::endl;
         exit(4);
     }
@@ -102,7 +102,7 @@ int run_intcode_program(std::vector<int> numbers,
                 int num_operands = 1;
                 auto modes = int_to_modes(numbers[i], num_operands);
                 if (opcode == Opcode::INPUT && modes[0] != Mode::POSITIONAL) {
-                    std::cerr << "Opcode " << int(opcode);
+                    std::cerr << "Opcode " << static_cast<int>(opcode);
                     std::cerr << " expects positional operand mode" << std::endl;
                     exit(3);
                 }
@@ -123,12 +123,12 @@ int run_intcode_program(std::vector<int> numbers,
                                 output << parameter;
                                 break;
                             default:
-                                std::cerr << "Unexpected mode: " << int(modes[0]) << std::endl;
+                                std::cerr << "Unexpected mode: " << static_cast<int>(modes[0]) << std::endl;
                                 exit(3);
                         }
                         break;
                     default:
-                        std::cerr << "Unexpected opcode: " << int(opcode) << std::endl;
+                        std::cerr << "Unexpected opcode: " << static_cast<int>(opcode) << std::endl;
                         exit(3);
                 }
                 i += num_operands + 1;
@@ -148,7 +148,7 @@ int run_intcode_program(std::vector<int> numbers,
                         condition = numbers[i+1];
                         break;
                     default:
-                        std::cerr << "Unexpected mode: " << int(modes[0]) << std::endl;
+                        std::cerr << "Unexpected mode: " << static_cast<int>(modes[0]) << std::endl;
                         exit(3);
                 }
                 switch (modes[1]) {
@@ -160,7 +160,7 @@ int run_intcode_program(std::vector<int> numbers,
                         destination = numbers[i+2];
                         break;
                     default:
-                        std::cerr << "Unexpected mode: " << int(modes[1]) << std::endl;
+                        std::cerr << "Unexpected mode: " << static_cast<int>(modes[1]) << std::endl;
                         exit(3);
                 }
                 switch (opcode) {
@@ -171,7 +171,7 @@ int run_intcode_program(std::vector<int> numbers,
                         i = !condition ? destination : i + num_operands + 1;
                         break;
                     default:
-                        std::cerr << "Unexpected opcode: " << int(opcode) << std::endl;
+                        std::cerr << "Unexpected opcode: " << static_cast<int>(opcode) << std::endl;
                         exit(3);
                 }
                 break;
@@ -192,7 +192,7 @@ int run_intcode_program(std::vector<int> numbers,
                         input_a = numbers[i+1];
                         break;
                     default:
-                        std::cerr << "Unexpected mode: " << int(modes[0]) << std::endl;
+                        std::cerr << "Unexpected mode: " << static_cast<int>(modes[0]) << std::endl;
                         exit(3);
                 }
                 switch (modes[1]) {
@@ -204,11 +204,11 @@ int run_intcode_program(std::vector<int> numbers,
                         input_b = numbers[i+2];
                         break;
                     default:
-                        std::cerr << "Unexpected mode: " << int(modes[1]) << std::endl;
+                        std::cerr << "Unexpected mode: " << static_cast<int>(modes[1]) << std::endl;
                         exit(3);
                 }
                 if (modes[2] != Mode::POSITIONAL) {
-                    std::cerr << "Opcode " << int(opcode);
+                    std::cerr << "Opcode " << static_cast<int>(opcode);
                     std::cerr << " expects positional mode for final operand" << std::endl;
                     exit(3);
                 }
@@ -229,7 +229,7 @@ int run_intcode_program(std::vector<int> numbers,
                         result = input_a == input_b ? 1 : 0;
                         break;
                     default:
-                        std::cerr << "Unexpected opcode: " << int(opcode) << std::endl;
+                        std::cerr << "Unexpected opcode: " << static_cast<int>(opcode) << std::endl;
                         exit(3);
                 }
                 numbers[output_index] = result;
@@ -237,7 +237,7 @@ int run_intcode_program(std::vector<int> numbers,
                 break;
             }
             default:
-                std::cerr << "Unexpected opcode: " << int(opcode) << std::endl;
+                std::cerr << "Unexpected opcode: " << static_cast<int>(opcode) << std::endl;
                 exit(3);
         }
     }
