@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <array>
-#include <climits>
+#include <limits>
 #include <sstream>
 
 #include "utils.h"
@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
     auto program = load_intcode_program(input_stream);
 
     std::array<int, 5> phase_settings{0, 1, 2, 3, 4};
-    auto max_signal = INT_MIN;
+    auto max_signal = std::numeric_limits<int>::min();
     do {
         auto signal = simulate_phase_settings(program, phase_settings);
         if (signal > max_signal) {

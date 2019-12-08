@@ -1,5 +1,5 @@
 #include <algorithm>
-#include <climits>
+#include <limits>
 #include <array>
 
 #include "utils.h"
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    auto fewest_zeros = INT_MAX;
+    auto fewest_zeros = std::numeric_limits<int>::max();
     auto layer_with_fewest_zeros = layers.begin();
     for (auto iter = layers.begin(); iter != layers.end(); ++iter) {
         auto num_zeros = std::count(iter->begin(), iter->end(), 0);

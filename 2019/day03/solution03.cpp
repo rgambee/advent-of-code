@@ -4,8 +4,8 @@
 
 #include <algorithm>
 #include <array>
-#include <climits>
 #include <cmath>
+#include <limits>
 #include <list>
 #include <memory>
 #include <sstream>
@@ -49,14 +49,14 @@ public:
     }
 
     int guess_steps() {
-        auto fewest_steps = INT_MAX;
+        auto fewest_steps = std::numeric_limits<int>::max();
         for (auto iter = neighbors.begin(); iter != neighbors.end(); ++iter) {
             if ((*iter)->steps >= 0) {
                 fewest_steps = std::min(fewest_steps,
                                         (*iter)->steps + get_distance(**iter));
             }
         }
-        if (fewest_steps == INT_MAX) {
+        if (fewest_steps == std::numeric_limits<int>::max()) {
             return -1;
         }
         return fewest_steps;
@@ -131,7 +131,8 @@ coord_type find_intersection(const coord_type &wire1_coordA,
     auto seg2_axis = get_segment_axis(wire2_coordA, wire2_coordB);
     if (seg1_axis == seg2_axis) {
         // Segments are parallel
-        return coord_type{INT_MIN, INT_MIN};
+        return coord_type{std::numeric_limits<int>::min(),
+                          std::numeric_limits<int>::min()};
     }
 
     auto min1 = std::min(wire1_coordA[seg1_axis], wire1_coordB[seg1_axis]);
@@ -152,7 +153,8 @@ coord_type find_intersection(const coord_type &wire1_coordA,
                               wire2_coordA[1-seg2_axis]};
         }
     }
-    return coord_type{INT_MIN, INT_MIN};
+    return coord_type{std::numeric_limits<int>::min(),
+                      std::numeric_limits<int>::min()};
 }
 
 
