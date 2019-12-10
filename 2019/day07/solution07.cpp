@@ -2,9 +2,11 @@
 #include <array>
 #include <chrono>
 #include <future>
+#include <iostream>
 #include <limits>
 #include <thread>
 
+#include "intcode.h"
 #include "utils.h"
 
 

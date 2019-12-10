@@ -5,11 +5,13 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <iostream>
 #include <limits>
 #include <list>
 #include <memory>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "utils.h"
 

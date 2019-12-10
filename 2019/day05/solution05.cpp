@@ -1,5 +1,7 @@
+#include <iostream>
 #include <sstream>
 
+#include "intcode.h"
 #include "utils.h"
 
 
