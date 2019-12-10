@@ -13,6 +13,7 @@ enum class Opcode {
     JUMP_FALSE = 6,
     LESS_THAN = 7,
     EQUALS = 8,
+    REL_BASE = 9,
     END = 99
 };
 
@@ -20,7 +21,8 @@ Opcode int_to_opcode(int integer);
 
 enum class Mode {
     POSITIONAL = 0,
-    IMMEDIATE = 1
+    IMMEDIATE = 1,
+    RELATIVE = 2
 };
 
 std::vector<Mode> int_to_modes(int integer, int num_operands);
