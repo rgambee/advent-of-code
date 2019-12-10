@@ -10,24 +10,24 @@
 #include "utils.h"
 
 
-using phase_settings_type = std::array<int, 5>;
+using phase_settings_type = std::array<intcode_type, 5>;
 
 
-int simulate_phase_settings(program_type program,
+intcode_type simulate_phase_settings(program_type program,
                             const phase_settings_type &phase_settings) {
-    std::vector<std::promise<int> > promises(phase_settings.size());
-    std::vector<std::future<int> > async_futures;
+    std::vector<std::promise<intcode_type> > promises(phase_settings.size());
+    std::vector<std::future<intcode_type> > async_futures;
     for (phase_settings_type::size_type i = 0; i < phase_settings.size(); ++i) {
         promises[i].set_value(phase_settings[i]);
 
-        auto get_input = [&promises, i]() -> int {
+        auto get_input = [&promises, i]() -> intcode_type {
             auto input = promises[i].get_future().get();
             // Reset promise so it can be used later
-            promises[i] = std::promise<int>();
+            promises[i] = std::promise<intcode_type>();
             return input;
         };
 
-        auto give_output = [&promises, i](int output) -> void {
+        auto give_output = [&promises, i](intcode_type output) -> void {
             auto ind = (i + 1) % promises.size();
             promises[ind].set_value(output);
         };
@@ -35,7 +35,7 @@ int simulate_phase_settings(program_type program,
         async_futures.push_back(std::move(std::async(
             std::launch::async,
             // Wrap run_intcode_program in lambda so overload resolution works
-            [program, get_input, give_output]() -> int {
+            [program, get_input, give_output]() -> intcode_type {
                 return run_intcode_program(program, get_input, give_output);
             })));
     }
@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
 
     std::cout << "Calculating part 1..." << std::endl;
     phase_settings_type phase_settings{0, 1, 2, 3, 4};
-    auto part1_max = std::numeric_limits<int>::min();
+    auto part1_max = std::numeric_limits<intcode_type>::min();
     do {
         auto signal = simulate_phase_settings(program, phase_settings);
         part1_max = std::max(part1_max, signal);
@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
 
     std::cout << "Calculating part 2..." << std::endl;
     phase_settings = phase_settings_type{5, 6, 7, 8, 9};
-    auto part2_max = std::numeric_limits<int>::min();
+    auto part2_max = std::numeric_limits<intcode_type>::min();
     do {
         auto signal = simulate_phase_settings(program, phase_settings);
         part2_max = std::max(part2_max, signal);

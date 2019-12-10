@@ -5,7 +5,8 @@
 #include <vector>
 
 
-using program_type = std::unordered_map<int, int>;
+using intcode_type = long long;
+using program_type = std::unordered_map<intcode_type, intcode_type>;
 
 enum class Opcode {
     ADD = 1,
@@ -20,7 +21,7 @@ enum class Opcode {
     END = 99
 };
 
-Opcode int_to_opcode(int integer);
+Opcode int_to_opcode(intcode_type integer);
 
 enum class Mode {
     POSITIONAL = 0,
@@ -28,16 +29,16 @@ enum class Mode {
     RELATIVE = 2
 };
 
-std::vector<Mode> int_to_modes(int integer, int num_operands);
+std::vector<Mode> int_to_modes(intcode_type integer, int num_operands);
 
 
 program_type load_intcode_program(std::istream &input_stream);
 
 
-int run_intcode_program(program_type numbers,
-                        std::istream &input = std::cin,
-                        std::ostream &output = std::cout);
+intcode_type run_intcode_program(program_type numbers,
+                                 std::istream &input = std::cin,
+                                 std::ostream &output = std::cout);
 
-int run_intcode_program(program_type numbers,
-                        std::function<int()> input,
-                        std::function<void(int)> output);
+intcode_type run_intcode_program(program_type numbers,
+                                 std::function<intcode_type()> input,
+                                 std::function<void(intcode_type)> output);

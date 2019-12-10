@@ -5,7 +5,7 @@
 #include "intcode.h"
 
 
-Opcode int_to_opcode(int integer) {
+Opcode int_to_opcode(intcode_type integer) {
     // Could simply cast to an Opcode,
     // but that wouldn't reject unknown inputs.
     switch(integer % 100) {
@@ -36,11 +36,12 @@ Opcode int_to_opcode(int integer) {
 }
 
 
-std::vector<Mode> int_to_modes(int integer, int num_operands) {
+std::vector<Mode> int_to_modes(intcode_type integer, int num_operands) {
     std::vector<Mode> result(num_operands, Mode::POSITIONAL);
     integer /= 100;     // Remove opcode (trailing two digits)
     for (auto place = 0; place < num_operands; place++) {
-        int digit = (integer / static_cast<int>(std::round(std::pow(10, place)))) % 10;
+        intcode_type digit = (integer / static_cast<intcode_type>(
+            std::round(std::pow(10, place)))) % 10;
         switch(digit) {
             case 0:
                 result[place] = Mode::POSITIONAL;
@@ -63,16 +64,16 @@ std::vector<Mode> int_to_modes(int integer, int num_operands) {
 program_type load_intcode_program(std::istream &input_stream) {
     program_type numbers;
     std::string num_str;
-    int address = 0;
+    intcode_type address = 0;
     while (std::getline(input_stream, num_str, ',')) {
-        numbers[address] = std::stoi(num_str);
+        numbers[address] = std::stoll(num_str);
         ++address;
     }
     return numbers;
 }
 
 
-void check_index(int index) {
+void check_index(intcode_type index) {
     if (index < 0) {
         std::cerr << "Index out of range: " << index << std::endl;
         exit(4);
@@ -85,14 +86,14 @@ intcode_type run_intcode_program(program_type numbers,
                                  std::ostream &output) {
     return run_intcode_program(
         numbers,
-        [&input]() -> int {intcode_type val = -1; input >> val; return val;},
+        [&input]() -> intcode_type {intcode_type val = -1; input >> val; return val;},
         [&output](intcode_type val) -> void {output << val;});
 }
 
 
-int run_intcode_program(program_type numbers,
-                        std::function<int()> input,
-                        std::function<void(int)> output) {
+intcode_type run_intcode_program(program_type numbers,
+                                 std::function<intcode_type()> input,
+                                 std::function<void(intcode_type)> output) {
     auto pc = 0, relative_base = 0;
     bool done = false;
     while (!done) {
@@ -156,18 +157,19 @@ int run_intcode_program(program_type numbers,
             case Opcode::JUMP_FALSE: {
                 int num_operands = 2;
                 auto modes = int_to_modes(numbers[pc], num_operands);
-                int condition = -1, destination = -1;
+                bool condition = false;
+                intcode_type destination = -1;
                 switch (modes[0]) {
                     case Mode::POSITIONAL:
                         check_index(numbers[pc+1]);
-                        condition = numbers[numbers[pc+1]];
+                        condition = static_cast<bool>(numbers[numbers[pc+1]]);
                         break;
                     case Mode::IMMEDIATE:
-                        condition = numbers[pc+1];
+                        condition = static_cast<bool>(numbers[pc+1]);
                         break;
                     case Mode::RELATIVE:
                         check_index(relative_base + numbers[pc+1]);
-                        condition = numbers[relative_base + numbers[pc+1]];
+                        condition = static_cast<bool>(numbers[relative_base + numbers[pc+1]]);
                         break;
                     default:
                         std::cerr << "Unexpected mode: " << static_cast<int>(modes[0]) << std::endl;
@@ -208,7 +210,7 @@ int run_intcode_program(program_type numbers,
             case Opcode::EQUALS: {
                 int num_operands = 3;
                 auto modes = int_to_modes(numbers[pc], num_operands);
-                int input_a = -1, input_b = -1, output_index;
+                intcode_type input_a = -1, input_b = -1, output_index;
                 switch (modes[0]) {
                     case Mode::POSITIONAL:
                         check_index(numbers[pc+1]);
@@ -256,7 +258,7 @@ int run_intcode_program(program_type numbers,
                         std::cerr << " for final operand" << std::endl;
                         exit(3);
                 }
-                int result = -1;
+                intcode_type result = -1;
                 switch (opcode) {
                     case Opcode::ADD:
                         result = input_a + input_b;
