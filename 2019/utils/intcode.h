@@ -1,8 +1,11 @@
 #include <functional>
 #include <istream>
 #include <ostream>
+#include <unordered_map>
 #include <vector>
 
+
+using program_type = std::unordered_map<int, int>;
 
 enum class Opcode {
     ADD = 1,
@@ -28,13 +31,13 @@ enum class Mode {
 std::vector<Mode> int_to_modes(int integer, int num_operands);
 
 
-std::vector<int> load_intcode_program(std::istream &input_stream);
+program_type load_intcode_program(std::istream &input_stream);
 
 
-int run_intcode_program(std::vector<int> numbers,
+int run_intcode_program(program_type numbers,
                         std::istream &input = std::cin,
                         std::ostream &output = std::cout);
 
-int run_intcode_program(std::vector<int> numbers,
+int run_intcode_program(program_type numbers,
                         std::function<int()> input,
                         std::function<void(int)> output);

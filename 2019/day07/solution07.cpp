@@ -13,7 +13,7 @@
 using phase_settings_type = std::array<int, 5>;
 
 
-int simulate_phase_settings(std::vector<int> program,
+int simulate_phase_settings(program_type program,
                             const phase_settings_type &phase_settings) {
     std::vector<std::promise<int> > promises(phase_settings.size());
     std::vector<std::future<int> > async_futures;

@@ -60,25 +60,27 @@ std::vector<Mode> int_to_modes(int integer, int num_operands) {
 }
 
 
-std::vector<int> load_intcode_program(std::istream &input_stream) {
-    std::vector<int> numbers;
+program_type load_intcode_program(std::istream &input_stream) {
+    program_type numbers;
     std::string num_str;
+    int address = 0;
     while (std::getline(input_stream, num_str, ',')) {
-        numbers.push_back(std::stoi(num_str));
+        numbers[address] = std::stoi(num_str);
+        ++address;
     }
     return numbers;
 }
 
 
-void check_index(int index, const std::vector<int> &numbers) {
-    if (index < 0 || static_cast<int>(numbers.size()) <= index) {
+void check_index(int index) {
+    if (index < 0) {
         std::cerr << "Index out of range: " << index << std::endl;
         exit(4);
     }
 }
 
 
-int run_intcode_program(std::vector<int> numbers,
+int run_intcode_program(program_type numbers,
                         std::istream &input,
                         std::ostream &output) {
     return run_intcode_program(
@@ -88,7 +90,7 @@ int run_intcode_program(std::vector<int> numbers,
 }
 
 
-int run_intcode_program(std::vector<int> numbers,
+int run_intcode_program(program_type numbers,
                         std::function<int()> input,
                         std::function<void(int)> output) {
     auto relative_base = 0;
@@ -115,9 +117,9 @@ int run_intcode_program(std::vector<int> numbers,
                 }
                 auto parameter = numbers[i+1];
                 if (modes[0] == Mode::POSITIONAL) {
-                    check_index(parameter, numbers);
+                    check_index(parameter);
                 } else if (modes[0] == Mode::RELATIVE) {
-                    check_index(relative_base + parameter, numbers);
+                    check_index(relative_base + parameter);
                 }
                 switch (opcode) {
                     case Opcode::INPUT:
@@ -156,14 +158,14 @@ int run_intcode_program(std::vector<int> numbers,
                 int condition = -1, destination = -1;
                 switch (modes[0]) {
                     case Mode::POSITIONAL:
-                        check_index(numbers[i+1], numbers);
+                        check_index(numbers[i+1]);
                         condition = numbers[numbers[i+1]];
                         break;
                     case Mode::IMMEDIATE:
                         condition = numbers[i+1];
                         break;
                     case Mode::RELATIVE:
-                        check_index(relative_base + numbers[i+1], numbers);
+                        check_index(relative_base + numbers[i+1]);
                         condition = numbers[relative_base + numbers[i+1]];
                         break;
                     default:
@@ -172,14 +174,14 @@ int run_intcode_program(std::vector<int> numbers,
                 }
                 switch (modes[1]) {
                     case Mode::POSITIONAL:
-                        check_index(numbers[i+2], numbers);
+                        check_index(numbers[i+2]);
                         destination = numbers[numbers[i+2]];
                         break;
                     case Mode::IMMEDIATE:
                         destination = numbers[i+2];
                         break;
                     case Mode::RELATIVE:
-                        check_index(relative_base + numbers[i+2], numbers);
+                        check_index(relative_base + numbers[i+2]);
                         destination = numbers[relative_base + numbers[i+2]];
                         break;
                     default:
@@ -208,14 +210,14 @@ int run_intcode_program(std::vector<int> numbers,
                 int input_a = -1, input_b = -1, output_index;
                 switch (modes[0]) {
                     case Mode::POSITIONAL:
-                        check_index(numbers[i+1], numbers);
+                        check_index(numbers[i+1]);
                         input_a = numbers[numbers[i+1]];
                         break;
                     case Mode::IMMEDIATE:
                         input_a = numbers[i+1];
                         break;
                     case Mode::RELATIVE:
-                        check_index(relative_base + numbers[i+1], numbers);
+                        check_index(relative_base + numbers[i+1]);
                         input_a = numbers[relative_base + numbers[i+1]];
                         break;
                     default:
@@ -224,14 +226,14 @@ int run_intcode_program(std::vector<int> numbers,
                 }
                 switch (modes[1]) {
                     case Mode::POSITIONAL:
-                        check_index(numbers[i+2], numbers);
+                        check_index(numbers[i+2]);
                         input_b = numbers[numbers[i+2]];
                         break;
                     case Mode::IMMEDIATE:
                         input_b = numbers[i+2];
                         break;
                     case Mode::RELATIVE:
-                        check_index(relative_base + numbers[i+2], numbers);
+                        check_index(relative_base + numbers[i+2]);
                         input_b = numbers[relative_base + numbers[i+2]];
                         break;
                     default:
@@ -241,11 +243,11 @@ int run_intcode_program(std::vector<int> numbers,
                 switch (modes[2]) {
                     case Mode::POSITIONAL:
                         output_index = numbers[i+3];
-                        check_index(output_index, numbers);
+                        check_index(output_index);
                         break;
                     case Mode::RELATIVE:
                         output_index = relative_base + numbers[i+3];
-                        check_index(output_index, numbers);
+                        check_index(output_index);
                         break;
                     default:
                         std::cerr << "Opcode " << static_cast<int>(opcode);
