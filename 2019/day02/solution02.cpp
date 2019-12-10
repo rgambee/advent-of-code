@@ -6,12 +6,12 @@
 
 int main(int argc, char **argv) {
     auto input_stream = open_input_file(argc, argv);
-    auto numbers = load_intcode_program(input_stream);
+    auto program = load_intcode_program(input_stream);
 
     // For part 1, set noun to 12 and verb to 2
-    numbers[1] = 12;
-    numbers[2] = 2;
-    auto part_1_result = run_intcode_program(numbers);
+    program[1] = 12;
+    program[2] = 2;
+    auto part_1_result = run_intcode_program(program);
 
     // For part 2, loop over all possible nouns and verbs
     // until the desired output is found
@@ -19,9 +19,9 @@ int main(int argc, char **argv) {
     intcode_type desired_output = 19690720;
     for (auto noun = 0; noun < 100; ++noun) {
         for (auto verb = 0; verb < 100; ++verb) {
-            numbers[1] = noun;
-            numbers[2] = verb;
-            if (run_intcode_program(numbers) == desired_output) {
+            program[1] = noun;
+            program[2] = verb;
+            if (run_intcode_program(program) == desired_output) {
                 part_2_result = 100 * noun + verb;
                 break;
             }

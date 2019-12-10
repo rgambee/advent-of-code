@@ -35,10 +35,10 @@ std::vector<Mode> int_to_modes(intcode_type integer, int num_operands);
 program_type load_intcode_program(std::istream &input_stream);
 
 
-intcode_type run_intcode_program(program_type numbers,
+intcode_type run_intcode_program(program_type program,
                                  std::istream &input = std::cin,
                                  std::ostream &output = std::cout);
 
-intcode_type run_intcode_program(program_type numbers,
+intcode_type run_intcode_program(program_type program,
                                  std::function<intcode_type()> input,
                                  std::function<void(intcode_type)> output);
