@@ -80,31 +80,32 @@ void check_index(int index) {
 }
 
 
-int run_intcode_program(program_type numbers,
-                        std::istream &input,
-                        std::ostream &output) {
+intcode_type run_intcode_program(program_type numbers,
+                                 std::istream &input,
+                                 std::ostream &output) {
     return run_intcode_program(
         numbers,
-        [&input]() -> int {int val = -1; input >> val; return val;},
-        [&output](int val) -> void {output << val;});
+        [&input]() -> int {intcode_type val = -1; input >> val; return val;},
+        [&output](intcode_type val) -> void {output << val;});
 }
 
 
 int run_intcode_program(program_type numbers,
                         std::function<int()> input,
                         std::function<void(int)> output) {
-    auto relative_base = 0;
-    for (std::vector<int>::size_type i = 0; i < numbers.size();) {
-        auto opcode = int_to_opcode(numbers[i]);
+    auto pc = 0, relative_base = 0;
+    bool done = false;
+    while (!done) {
+        auto opcode = int_to_opcode(numbers[pc]);
         switch (opcode) {
             case Opcode::END:
-                i = numbers.size();
+                done = true;
                 break;
             case Opcode::INPUT:
             case Opcode::OUTPUT:
             case Opcode::REL_BASE: {
                 int num_operands = 1;
-                auto modes = int_to_modes(numbers[i], num_operands);
+                auto modes = int_to_modes(numbers[pc], num_operands);
                 if (opcode == Opcode::INPUT && modes[0] != Mode::POSITIONAL) {
                     std::cerr << "Opcode " << static_cast<int>(opcode);
                     std::cerr << " expects positional operand mode" << std::endl;
@@ -115,7 +116,7 @@ int run_intcode_program(program_type numbers,
                     std::cerr << " expects immediate operand mode" << std::endl;
                     exit(3);
                 }
-                auto parameter = numbers[i+1];
+                auto parameter = numbers[pc+1];
                 if (modes[0] == Mode::POSITIONAL) {
                     check_index(parameter);
                 } else if (modes[0] == Mode::RELATIVE) {
@@ -148,25 +149,25 @@ int run_intcode_program(program_type numbers,
                         std::cerr << "Unexpected opcode: " << static_cast<int>(opcode) << std::endl;
                         exit(3);
                 }
-                i += num_operands + 1;
+                pc += num_operands + 1;
                 break;
             }
             case Opcode::JUMP_TRUE:
             case Opcode::JUMP_FALSE: {
                 int num_operands = 2;
-                auto modes = int_to_modes(numbers[i], num_operands);
+                auto modes = int_to_modes(numbers[pc], num_operands);
                 int condition = -1, destination = -1;
                 switch (modes[0]) {
                     case Mode::POSITIONAL:
-                        check_index(numbers[i+1]);
-                        condition = numbers[numbers[i+1]];
+                        check_index(numbers[pc+1]);
+                        condition = numbers[numbers[pc+1]];
                         break;
                     case Mode::IMMEDIATE:
-                        condition = numbers[i+1];
+                        condition = numbers[pc+1];
                         break;
                     case Mode::RELATIVE:
-                        check_index(relative_base + numbers[i+1]);
-                        condition = numbers[relative_base + numbers[i+1]];
+                        check_index(relative_base + numbers[pc+1]);
+                        condition = numbers[relative_base + numbers[pc+1]];
                         break;
                     default:
                         std::cerr << "Unexpected mode: " << static_cast<int>(modes[0]) << std::endl;
@@ -174,15 +175,15 @@ int run_intcode_program(program_type numbers,
                 }
                 switch (modes[1]) {
                     case Mode::POSITIONAL:
-                        check_index(numbers[i+2]);
-                        destination = numbers[numbers[i+2]];
+                        check_index(numbers[pc+2]);
+                        destination = numbers[numbers[pc+2]];
                         break;
                     case Mode::IMMEDIATE:
-                        destination = numbers[i+2];
+                        destination = numbers[pc+2];
                         break;
                     case Mode::RELATIVE:
-                        check_index(relative_base + numbers[i+2]);
-                        destination = numbers[relative_base + numbers[i+2]];
+                        check_index(relative_base + numbers[pc+2]);
+                        destination = numbers[relative_base + numbers[pc+2]];
                         break;
                     default:
                         std::cerr << "Unexpected mode: " << static_cast<int>(modes[1]) << std::endl;
@@ -190,10 +191,10 @@ int run_intcode_program(program_type numbers,
                 }
                 switch (opcode) {
                     case Opcode::JUMP_TRUE:
-                        i = condition ? destination : i + num_operands + 1;
+                        pc = condition ? destination : pc + num_operands + 1;
                         break;
                     case Opcode::JUMP_FALSE:
-                        i = !condition ? destination : i + num_operands + 1;
+                        pc = !condition ? destination : pc + num_operands + 1;
                         break;
                     default:
                         std::cerr << "Unexpected opcode: " << static_cast<int>(opcode) << std::endl;
@@ -206,19 +207,19 @@ int run_intcode_program(program_type numbers,
             case Opcode::LESS_THAN:
             case Opcode::EQUALS: {
                 int num_operands = 3;
-                auto modes = int_to_modes(numbers[i], num_operands);
+                auto modes = int_to_modes(numbers[pc], num_operands);
                 int input_a = -1, input_b = -1, output_index;
                 switch (modes[0]) {
                     case Mode::POSITIONAL:
-                        check_index(numbers[i+1]);
-                        input_a = numbers[numbers[i+1]];
+                        check_index(numbers[pc+1]);
+                        input_a = numbers[numbers[pc+1]];
                         break;
                     case Mode::IMMEDIATE:
-                        input_a = numbers[i+1];
+                        input_a = numbers[pc+1];
                         break;
                     case Mode::RELATIVE:
-                        check_index(relative_base + numbers[i+1]);
-                        input_a = numbers[relative_base + numbers[i+1]];
+                        check_index(relative_base + numbers[pc+1]);
+                        input_a = numbers[relative_base + numbers[pc+1]];
                         break;
                     default:
                         std::cerr << "Unexpected mode: " << static_cast<int>(modes[0]) << std::endl;
@@ -226,15 +227,15 @@ int run_intcode_program(program_type numbers,
                 }
                 switch (modes[1]) {
                     case Mode::POSITIONAL:
-                        check_index(numbers[i+2]);
-                        input_b = numbers[numbers[i+2]];
+                        check_index(numbers[pc+2]);
+                        input_b = numbers[numbers[pc+2]];
                         break;
                     case Mode::IMMEDIATE:
-                        input_b = numbers[i+2];
+                        input_b = numbers[pc+2];
                         break;
                     case Mode::RELATIVE:
-                        check_index(relative_base + numbers[i+2]);
-                        input_b = numbers[relative_base + numbers[i+2]];
+                        check_index(relative_base + numbers[pc+2]);
+                        input_b = numbers[relative_base + numbers[pc+2]];
                         break;
                     default:
                         std::cerr << "Unexpected mode: " << static_cast<int>(modes[1]) << std::endl;
@@ -242,11 +243,11 @@ int run_intcode_program(program_type numbers,
                 }
                 switch (modes[2]) {
                     case Mode::POSITIONAL:
-                        output_index = numbers[i+3];
+                        output_index = numbers[pc+3];
                         check_index(output_index);
                         break;
                     case Mode::RELATIVE:
-                        output_index = relative_base + numbers[i+3];
+                        output_index = relative_base + numbers[pc+3];
                         check_index(output_index);
                         break;
                     default:
@@ -274,7 +275,7 @@ int run_intcode_program(program_type numbers,
                         exit(3);
                 }
                 numbers[output_index] = result;
-                i += num_operands + 1;
+                pc += num_operands + 1;
                 break;
             }
             default:
