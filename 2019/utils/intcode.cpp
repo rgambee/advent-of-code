@@ -107,44 +107,48 @@ intcode_type run_intcode_program(program_type program,
             case Opcode::REL_BASE: {
                 int num_operands = 1;
                 auto modes = int_to_modes(program[pc], num_operands);
-                if (opcode == Opcode::INPUT && modes[0] != Mode::POSITIONAL) {
+                if (opcode == Opcode::INPUT && modes[0] != Mode::POSITIONAL
+                    && modes[0] != Mode::RELATIVE) {
                     std::cerr << "Opcode " << static_cast<int>(opcode);
                     std::cerr << " expects positional operand mode" << std::endl;
                     exit(3);
                 }
-                if (opcode == Opcode::REL_BASE && modes[0] != Mode::IMMEDIATE) {
-                    std::cerr << "Opcode " << static_cast<int>(opcode);
-                    std::cerr << " expects immediate operand mode" << std::endl;
-                    exit(3);
-                }
                 auto parameter = program[pc+1];
-                if (modes[0] == Mode::POSITIONAL) {
-                    check_index(parameter);
-                } else if (modes[0] == Mode::RELATIVE) {
-                    check_index(relative_base + parameter);
+                intcode_type value;
+                switch (modes[0]) {
+                    case Mode::POSITIONAL:
+                        check_index(parameter);
+                        value = program[parameter];
+                        break;
+                    case Mode::IMMEDIATE:
+                        value = parameter;
+                        break;
+                    case Mode::RELATIVE:
+                        check_index(relative_base + parameter);
+                        value = program[relative_base + parameter];
+                        break;
+                    default:
+                        std::cerr << "Unexpected mode: " << static_cast<int>(modes[0]) << std::endl;
+                        exit(3);
                 }
                 switch (opcode) {
                     case Opcode::INPUT:
-                        program[parameter] = input();
-                        break;
-                    case Opcode::OUTPUT:
                         switch (modes[0]) {
                             case Mode::POSITIONAL:
-                                output(program[parameter]);
-                                break;
-                            case Mode::IMMEDIATE:
-                                output(parameter);
+                                program[parameter] = input();
                                 break;
                             case Mode::RELATIVE:
-                                output(program[relative_base + parameter]);
+                                program[relative_base + parameter] = input();
                                 break;
                             default:
                                 std::cerr << "Unexpected mode: " << static_cast<int>(modes[0]) << std::endl;
                                 exit(3);
                         }
+                    case Opcode::OUTPUT:
+                        output(value);
                         break;
                     case Opcode::REL_BASE:
-                        relative_base += parameter;
+                        relative_base += value;
                         break;
                     default:
                         std::cerr << "Unexpected opcode: " << static_cast<int>(opcode) << std::endl;
