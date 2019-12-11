@@ -87,7 +87,7 @@ intcode_type run_intcode_program(program_type program,
     return run_intcode_program(
         program,
         [&input]() -> intcode_type {intcode_type val = -1; input >> val; return val;},
-        [&output](intcode_type val) -> void {output << val;});
+        [&output](intcode_type val) -> void {output << val << ",";});
 }
 
 
