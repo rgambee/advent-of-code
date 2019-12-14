@@ -42,8 +42,6 @@ public:
                 location = coord_type{location[0] + 1, location[1]};
                 break;
         }
-        std::cout << "Moving robot to (" << location[0] << ", " << location[1];
-        std::cout << ")" << std::endl;
         return location;
     }
 
@@ -90,7 +88,6 @@ public:
     }
 
     void paint(Paint color, panels_type &panels) {
-        std::cout << "Painting panel " << static_cast<int>(color) << std::endl;
         panels[location] = color;
     }
 
@@ -114,12 +111,9 @@ int main(int argc, char **argv) {
 
     auto intcode_input = [&robo, &panels,&toggle]() -> intcode_type {
         auto inp = static_cast<intcode_type>(robo.get_paint_color(panels));
-        std::cout << "Passing intcode input " << inp << std::endl;
-        // toggle = true;
         return inp;
     };
     auto intcode_output = [&robo, &panels, &toggle, &painted](intcode_type output) -> void {
-        std::cout << "Received intcode output " << output << std::endl;
         if (toggle) {
             // First of output pair is the color to paint the current panel
             robo.paint(static_cast<Paint>(output), panels);
