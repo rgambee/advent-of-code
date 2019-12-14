@@ -16,6 +16,7 @@ int main(int argc, char **argv) {
     std::cout << std::endl;
     std::cout << "PART 2" << std::endl;
     program_input = std::stringstream{"2"};
+    std::cout << "BOOST program output for input 2: ";
     run_intcode_program(program, program_input, std::cout);
     return 0;
 }
