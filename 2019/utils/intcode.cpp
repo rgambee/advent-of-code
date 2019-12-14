@@ -144,6 +144,7 @@ intcode_type run_intcode_program(program_type program,
                                 std::cerr << "Unexpected mode: " << static_cast<int>(modes[0]) << std::endl;
                                 exit(3);
                         }
+                        break;
                     case Opcode::OUTPUT:
                         output(value);
                         break;
