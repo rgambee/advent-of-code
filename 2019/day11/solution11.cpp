@@ -1,5 +1,7 @@
 #include <array>
+#include <algorithm>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <set>
 
@@ -100,6 +102,40 @@ public:
 };
 
 
+void draw_panels(const panels_type &panels) {
+    // Iterating over panels goes column by column, not row by row
+    if (panels.size() == 0) {
+        return;
+    }
+    auto min_col = std::numeric_limits<int>::max();
+    auto min_row = std::numeric_limits<int>::max();
+    for (auto iter = panels.begin(); iter != panels.end(); ++iter) {
+        min_col = std::min(iter->first[0], min_col);
+        min_row = std::min(iter->first[1], min_row);
+    }
+    std::vector<std::string> lines;
+    for (auto iter = panels.begin(); iter != panels.end(); ++iter) {
+        auto x = iter->first[0];
+        auto y = iter->first[1];
+        auto col = x - min_col;
+        auto row = y - min_row;
+        auto paint = iter->second;
+        auto color = paint == Paint::WHITE ? '#' : ' ';
+        while (static_cast<int>(lines.size()) <= row) {
+            lines.emplace_back();
+        }
+        while (static_cast<int>(lines[row].size()) < col) {
+            lines[row].push_back(' ');
+        }
+        lines[row].push_back(color);
+    }
+    // Print out lines in reverse order
+    for (auto iter = lines.rbegin(); iter != lines.rend(); ++iter) {
+        std::cout << *iter << std::endl;
+    }
+}
+
+
 int main(int argc, char **argv) {
     auto input_stream = open_input_file(argc, argv);
     auto program = load_intcode_program(input_stream);
@@ -126,10 +162,20 @@ int main(int argc, char **argv) {
         toggle = !toggle;
     };
     run_intcode_program(program, intcode_input, intcode_output);
+    auto num_painted = painted.size();
+
+    // Reset for part 2
+    panels.clear();
+    robo = Robot();
+    toggle = true;
+    // Set robot's starting panel to white
+    panels[robo.location] = Paint::WHITE;
+    run_intcode_program(program, intcode_input, intcode_output);
 
     std::cout << "PART 1" << std::endl;
-    std::cout << "Number of panels painted: " << painted.size() << std::endl;
+    std::cout << "Number of panels painted: " << num_painted << std::endl;
     std::cout << std::endl;
     std::cout << "PART 2" << std::endl;
+    draw_panels(panels);
     return 0;
 }
