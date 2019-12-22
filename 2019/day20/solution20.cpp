@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <functional>
 #include <iostream>
 #include <limits>
 #include <queue>
@@ -7,6 +8,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "utils.h"
@@ -23,7 +25,7 @@ public:
     }
 
     coord_type coords{0, 0};
-    int distance = -1;
+    std::map<size_t, size_t> distances;
     std::vector<std::shared_ptr<Node> > neighbors;
 };
 
@@ -31,6 +33,7 @@ public:
 using node_ptr = std::shared_ptr<Node>;
 using portals_type = std::unordered_map<std::string, std::vector<node_ptr> >;
 using grid_type = std::map<coord_type, node_ptr>;
+using node_depth_pair = std::pair<node_ptr, size_t>;
 
 
 // TODO: reduce reused code
@@ -44,7 +47,6 @@ void find_outside_portals(const std::vector<std::string> &maze_str,
             continue;
         }
         std::string portal_name{maze_str[y - 2][x], maze_str[y - 1][x]};
-        std::cout << "Adding " << portal_name << std::endl;
         portals[portal_name].push_back(iter->second);
     }
     // Right
@@ -54,7 +56,6 @@ void find_outside_portals(const std::vector<std::string> &maze_str,
             continue;
         }
         std::string portal_name{maze_str[y][x + 1], maze_str[y][x + 2]};
-        std::cout << "Adding " << portal_name << std::endl;
         portals[portal_name].push_back(iter->second);
     }
     // Bottom
@@ -64,7 +65,6 @@ void find_outside_portals(const std::vector<std::string> &maze_str,
             continue;
         }
         std::string portal_name{maze_str[y + 1][x], maze_str[y + 2][x]};
-        std::cout << "Adding " << portal_name << std::endl;
         portals[portal_name].push_back(iter->second);
     }
     // Left
@@ -74,7 +74,6 @@ void find_outside_portals(const std::vector<std::string> &maze_str,
             continue;
         }
         std::string portal_name{maze_str[y][x - 2], maze_str[y][x - 1]};
-        std::cout << "Adding " << portal_name << std::endl;
         portals[portal_name].push_back(iter->second);
     }
 }
@@ -90,7 +89,6 @@ void find_inside_portals(const std::vector<std::string> &maze_str,
             continue;
         }
         std::string portal_name{maze_str[y + 1][x], maze_str[y + 2][x]};
-        std::cout << "Adding " << portal_name << std::endl;
         portals[portal_name].push_back(iter->second);
     }
     // Right
@@ -100,7 +98,6 @@ void find_inside_portals(const std::vector<std::string> &maze_str,
             continue;
         }
         std::string portal_name{maze_str[y][x - 2], maze_str[y][x - 1]};
-        std::cout << "Adding " << portal_name << std::endl;
         portals[portal_name].push_back(iter->second);
     }
     // Bottom
@@ -110,7 +107,6 @@ void find_inside_portals(const std::vector<std::string> &maze_str,
             continue;
         }
         std::string portal_name{maze_str[y - 2][x], maze_str[y - 1][x]};
-        std::cout << "Adding " << portal_name << std::endl;
         portals[portal_name].push_back(iter->second);
     }
     // Left
@@ -120,9 +116,53 @@ void find_inside_portals(const std::vector<std::string> &maze_str,
             continue;
         }
         std::string portal_name{maze_str[y][x + 1], maze_str[y][x + 2]};
-        std::cout << "Adding " << portal_name << std::endl;
         portals[portal_name].push_back(iter->second);
     }
+}
+
+
+size_t solve_maze(node_ptr start, node_ptr end,
+                  std::function<bool(coord_type)> on_outside_edge,
+                  std::function<bool(coord_type)> on_inside_edge,
+                  bool recursive = false) {
+    // Breadth-first search
+    start->distances[0] = 0;
+    std::queue<node_depth_pair> active_nodes;
+    active_nodes.emplace(start, 0);
+    auto found_end = false;
+    while (!found_end && !active_nodes.empty()) {
+        auto current = active_nodes.front();
+        active_nodes.pop();
+        auto curr_node = current.first;
+        auto curr_depth = current.second;
+        for (auto neigh: curr_node->neighbors) {
+            auto neigh_depth = curr_depth;
+            if (recursive && on_outside_edge(curr_node->coords)
+                && on_inside_edge(neigh->coords)) {
+                // Moveing outside to in goes up one level
+                if (curr_depth == 0) {
+                    // Outside portals act like walls at top level
+                    continue;
+                } else {
+                    neigh_depth = curr_depth - 1;
+                }
+            } else if (recursive && on_inside_edge(curr_node->coords)
+                       && on_outside_edge(neigh->coords)) {
+                // Moving inside to out goes down one level
+                neigh_depth = curr_depth + 1;
+            }
+            if (neigh->distances.find(neigh_depth) == neigh->distances.end()) {
+                neigh->distances[neigh_depth] = curr_node->distances.at(curr_depth) + 1;
+                if (neigh->coords == end->coords && neigh_depth == 0) {
+                    found_end = true;
+                    break;
+                } else {
+                    active_nodes.emplace(neigh, neigh_depth);
+                }
+            }
+        }
+    }
+    return end->distances.at(0);
 }
 
 
@@ -164,6 +204,11 @@ int main(int argc, char **argv) {
         }
     }
 
+    auto on_outside_edge = [min_x, min_y, max_x, max_y](coord_type coords) {
+        return (coords[0] == min_x || coords[0] == max_x
+                || coords[1] == min_y || coords[1] == max_y);
+    };
+
     // Walk around the outside adding portals
     portals_type portals;
     find_outside_portals(maze_str, grid, portals, min_x, min_y, max_x, max_y);
@@ -199,6 +244,11 @@ int main(int argc, char **argv) {
         }
     }
 
+    auto on_inside_edge = [min_x, min_y, max_x, max_y](coord_type coords) {
+        return (coords[0] == min_x || coords[0] == max_x
+                || coords[1] == min_y || coords[1] == max_y);
+    };
+
     // Walk around the inside
     find_inside_portals(maze_str, grid, portals, min_x, min_y, max_x, max_y);
 
@@ -215,27 +265,20 @@ int main(int argc, char **argv) {
         }
     }
 
-    // Solve flat maze using breadth-first search
     auto start = portals.at("AA")[0];
-    start->distance = 0;
     auto end = portals.at("ZZ")[0];
-    std::queue<node_ptr> active_nodes;
-    active_nodes.push(start);
-    while (!active_nodes.empty()) {
-        auto current = active_nodes.front();
-        active_nodes.pop();
-        for (auto neigh: current->neighbors) {
-            if (neigh->distance < 0) {
-                neigh->distance = current->distance + 1;
-                active_nodes.push(neigh);
-            }
-        }
+    auto part1_answer = solve_maze(start, end, on_outside_edge, on_inside_edge, false);
+    // Clear all node distances
+    for (auto &pair: grid) {
+        pair.second->distances.clear();
     }
+    auto part2_answer = solve_maze(start, end, on_outside_edge, on_inside_edge, true);
 
 
     std::cout << "PART 1" << std::endl;
-    std::cout << "Steps from AA to ZZ: " << end->distance << std::endl;
+    std::cout << "Non-recursive distance to end: " << part1_answer << std::endl;
     std::cout << std::endl;
     std::cout << "PART 2" << std::endl;
+    std::cout << "Recursive distance to end: " << part2_answer << std::endl;
     return 0;
 }
