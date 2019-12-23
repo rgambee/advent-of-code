@@ -22,6 +22,7 @@ using deck_type = std::list<long long>;
 
 class Instruction {
 public:
+    virtual ~Instruction() {};
     virtual void simulate_slow(deck_type &deck) const = 0;
     virtual long long simulate_fast(long long deck_size,
                                     long long starting_pos) const = 0;
