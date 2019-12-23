@@ -191,6 +191,101 @@ std::vector<Move> follow_scaffold(const grid_type &grid,
 }
 
 
+std::string compress(const std::vector<Move> &moves_vec,
+                     size_t max_length = 20,
+                     size_t num_movement_functions = 3) {
+    // Convert Move::FORWARDs to numerals
+    std::string moves_str;
+    auto forward_count = 0;
+    for (auto m: moves_vec) {
+        if (m == Move::LEFT || m == Move::RIGHT) {
+            if (forward_count > 0) {
+                moves_str.append(std::to_string(forward_count));
+                forward_count = 0;
+            }
+            moves_str.push_back(static_cast<char>(m));
+        } else if (m == Move::FORWARD) {
+            ++forward_count;
+        }
+    }
+    if (forward_count > 0) {
+        moves_str.append(std::to_string(forward_count));
+    }
+    std::cout << "Move string:" << std::endl;
+    std::cout << moves_str << std::endl;
+
+    // Compress the string into a main movement routine
+    // and movement functions
+    std::string function_names;
+    for (size_t func = 0; func < num_movement_functions; ++func) {
+        function_names.push_back(static_cast<char>(func) + 'A');
+        std::cout << function_names[function_names.size() - 1] << std::endl;
+        size_t best_compression = 0;
+        // size_t best_start = 0;
+        size_t best_len = 0;
+        std::string best_str;
+        for (size_t func_start = 0; func_start < moves_str.size(); ++func_start) {
+            // std::cout << "func_start: " << func_start << std::endl;
+            // Don't allow the move function to start mid-numeral
+            if (func_start > 0
+                && moves_str[func_start] != static_cast<char>(Move::LEFT)
+                && moves_str[func_start] != static_cast<char>(Move::RIGHT)) {
+                auto prev = moves_str[func_start - 1];
+                if (prev != static_cast<char>(Move::LEFT)
+                    && prev != static_cast<char>(Move::RIGHT)) {
+                    continue;
+                }
+            }
+            for (size_t func_len = 1; func_len <= max_length; ++func_len) {
+                // std::cout << "func_len: " << func_len << std::endl;
+                auto func_str = moves_str.substr(func_start, func_len);
+                // Don't allow the move function to end mid-numeral
+                auto func_end = func_start + func_len;
+                if (func_end < moves_str.size()
+                    && moves_str[func_end] != static_cast<char>(Move::LEFT)
+                    && moves_str[func_end] != static_cast<char>(Move::RIGHT)) {
+                    auto next = moves_str[func_end];
+                    if (next != static_cast<char>(Move::LEFT)
+                        && next != static_cast<char>(Move::RIGHT)) {
+                        continue;
+                    }
+                }
+                // Don't include other move functions
+                if (func_str.find(function_names) != std::string::npos) {
+                    break;
+                }
+                size_t compression = 0;
+                // std::cout << "Checking for matches" << std::endl;
+                for (auto find_start = moves_str.find(func_str);
+                     find_start < moves_str.size();
+                     find_start = moves_str.find(func_str, find_start + 1)) {
+                    // std::cout << "Match at " << find_start << std::endl;
+                    compression += func_len - 1;
+                }
+                if (compression > best_compression) {
+                    best_compression = compression;
+                    // best_start = func_start;
+                    best_len = func_len;
+                    best_str = func_str;
+                }
+            }
+        }
+        std::cout << "Best move function is: " << best_str << std::endl;
+
+        // Replace instances of this move function with its letter
+        std::cout << "Compressing" << std::endl;
+        for (auto find_start = moves_str.find(best_str);
+             find_start < moves_str.size();
+             find_start = moves_str.find(best_str)) {
+            moves_str.replace(find_start, best_len, 1, function_names[func]);
+            // std::cout << moves_str << std::endl;
+        }
+    }
+    std::cout << "Compressed string: " << moves_str << std::endl;
+    return moves_str;
+}
+
+
 int main(int argc, char **argv) {
     auto input_stream = open_input_file(argc, argv);
     auto program = load_intcode_program(input_stream);
@@ -223,6 +318,7 @@ int main(int argc, char **argv) {
         std::cout << static_cast<char>(move);
     }
     std::cout << std::endl;
+    compress(moves);
 
     std::cout << "PART 1" << std::endl;
     std::cout << "Alignment paramter: " << align_param << std::endl;
