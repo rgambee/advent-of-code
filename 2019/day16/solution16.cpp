@@ -1,3 +1,5 @@
+// Solution based on https://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm
+
 #include <iostream>
 #include <valarray>
 #include <cmath>
@@ -6,31 +8,50 @@
 #include "utils.h"
 
 
-constexpr auto NUM_PHASES = 100;
+constexpr auto NUM_PHASES = 1;//100;
+constexpr auto REPEATS = 1;//10000;
 const std::valarray<int> BASE_PATTERN{0, 1, 0, -1};
+
+
+// This could be optimized to reduce the amount of copying that happens
+std::valarray<int> fft(const std::valarray<int> &input_list) {
+    auto N = input_list.size();
+    std::valarray<int> output_list(N);
+    if (N == 1) {
+        return input_list;
+    }
+
+    output_list[std::slice(0, N / 2, 1)] = fft(input_list[std::slice(0, N/2, 2)]);
+    output_list[std::slice(N / 2, N / 2, 1)] = fft(input_list[std::slice(1, N/2, 2)]);
+    for (size_t k = 0; k < N / 2; ++k) {
+        auto temp = output_list[k];
+        auto twiddle = BASE_PATTERN[((k + 1) * BASE_PATTERN.size() / N) % BASE_PATTERN.size()];
+        output_list[k] = std::abs((temp + twiddle * output_list[k + N / 2]) % 10);
+        output_list[k + N / 2] = std::abs((temp - twiddle * output_list[k + N / 2]) % 10);
+    }
+    return output_list;
+}
 
 
 int main(int argc, char **argv) {
     auto input_stream = open_input_file(argc, argv);
     std::string line;
     std::getline(input_stream, line);
-    std::valarray<int> list(line.size());
-    for (std::string::size_type i = 0; i < line.size(); ++i) {
-        list[i] = line[i] - '0';
+    std::valarray<int> list(line.size() * REPEATS);
+    for (size_t i = 0; i < REPEATS; ++i) {
+        for (size_t j = 0; j < line.size(); ++j) {
+            list[i * line.size() + j] = line[j] - '0';
+        }
     }
 
-    std::valarray<int> pattern(list.size());
-    std::valarray<int> next_list(list.size());
-    for (auto phase = 0; phase < NUM_PHASES; ++phase) {
-        for (size_t output_index = 0; output_index < list.size(); ++output_index) {
-            for (size_t i = 0; i < pattern.size(); ++i) {
-                auto base_index = ((i + 1) / (output_index + 1) % BASE_PATTERN.size());
-                pattern[i] = BASE_PATTERN[base_index];
-            }
+    auto log = std::log2(list.size());
+    if (log != std::floor(log)) {
+        std::cerr << "Input list length is not a power of 2" << std::endl;
+        exit(3);
+    }
 
-            next_list[output_index] = std::abs((list * pattern).sum()) % 10;
-        }
-        list = next_list;
+    for (auto phase = 0; phase < NUM_PHASES; ++phase) {
+        list = fft(list);
     }
 
     std::cout << "PART 1" << std::endl;
