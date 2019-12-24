@@ -114,10 +114,36 @@ int main(int argc, char **argv) {
         Instruction(Operation::AND, Register::FOUR, Register::JUMP)
     };
 
+
+    std::vector<Instruction> instructions_part2 {
+        // Jump if hole three steps away
+        Instruction(Operation::NOT, Register::THREE, Register::TEMP),
+        Instruction(Operation::OR, Register::TEMP, Register::JUMP),
+        // Don't jump if hole five steps away and eight steps away
+        // That would put us in a position where we'd be stuck
+        Instruction(Operation::NOT, Register::FIVE, Register::TEMP),
+        Instruction(Operation::NOT, Register::TEMP, Register::TEMP),
+        Instruction(Operation::OR, Register::EIGHT, Register::TEMP),
+        Instruction(Operation::AND, Register::TEMP, Register::JUMP),
+        // Jump if there are holes two and five steps away
+        // since we'd be stuck if we were to take a step
+        Instruction(Operation::NOT, Register::TWO, Register::TEMP),
+        Instruction(Operation::NOT, Register::TEMP, Register::TEMP),
+        Instruction(Operation::OR, Register::FIVE, Register::TEMP),
+        Instruction(Operation::NOT, Register::TEMP, Register::TEMP),
+        Instruction(Operation::OR, Register::TEMP, Register::JUMP),
+        // Jump if directly in front of hole
+        Instruction(Operation::NOT, Register::ONE, Register::TEMP),
+        Instruction(Operation::OR, Register::TEMP, Register::JUMP),
+        // Don't jump if destination is hole
+        Instruction(Operation::AND, Register::FOUR, Register::JUMP)
+    };
+
     std::cout << "PART 1" << std::endl;
     run_springdroid_program(instructions_part1, program, true);
 
     std::cout << std::endl;
     std::cout << "PART 2" << std::endl;
+    run_springdroid_program(instructions_part2, program, false);
     return 0;
 }
