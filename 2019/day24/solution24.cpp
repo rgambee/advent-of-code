@@ -1,79 +1,176 @@
 #include <array>
 #include <cmath>
 #include <iostream>
-#include <map>
 #include <set>
 #include <string>
-// #include <valarray>
 #include <vector>
 
 #include "utils.h"
 
 
-enum class Occupied {
-    EMPTY = '.',
-    BUG = '#'
-};
+using coord_type = std::array<int, 3>;
+using grid_type = std::set<coord_type>;
 
 
-using coord_type = std::array<size_t, 2>;
-using grid_type = std::map<coord_type, Occupied>;
+/*   --
+     21012
+ -2  .....
+ -1  .....
+  0  .....
+  1  .....
+  2  .....
+*/
 
 
-std::array<coord_type, 4> get_neighbors(coord_type coords) {
-    return std::array<coord_type, 4>{
-        coord_type{coords[0], coords[1] + 1},
-        coord_type{coords[0], coords[1] - 1},
-        coord_type{coords[0] + 1, coords[1]},
-        coord_type{coords[0] - 1, coords[1]},
-    };
+std::vector<coord_type> get_neighbors(coord_type coords, bool recursive = false) {
+    std::vector<coord_type> neighbors;
+    // Add neighbors on own level
+    for (auto dx: {-1, 1}) {
+        auto x = coords[0] + dx;
+        if (x < -2 || x > 2) {
+            continue;
+        }
+        if (!(recursive && x == 0 && coords[1] == 0)) {
+            // Only add (0, 0, z) if we're not in recursive mode
+            neighbors.push_back({x, coords[1], coords[2]});
+        }
+    }
+    for (auto dy: {-1, 1}) {
+        auto y = coords[1] + dy;
+        if (y < -2 || y > 2) {
+            continue;
+        }
+        if (!(recursive && coords[0] == 0 &&  y == 0)) {
+            // Only add (0, 0, z) if we're not in recursive mode
+            neighbors.push_back({coords[0], y, coords[2]});
+        }
+    }
+    if (!recursive) {
+        return neighbors;
+    }
+
+    // Add neighbors on other levels
+    switch (coords[0]) {
+        case -2:
+            // Left outer edge
+            neighbors.push_back({-1, 0, coords[2] - 1});
+            break;
+        case 2:
+            // Right outer edge
+            neighbors.push_back({1, 0, coords[2] - 1});
+            break;
+        case -1:
+            // Left inner edge
+            if (coords[1] == 0) {
+                neighbors.push_back({-2, -2, coords[2] + 1});
+                neighbors.push_back({-2, -1, coords[2] + 1});
+                neighbors.push_back({-2,  0, coords[2] + 1});
+                neighbors.push_back({-2,  1, coords[2] + 1});
+                neighbors.push_back({-2,  2, coords[2] + 1});
+            }
+            break;
+        case 1:
+            // Right inner edge
+            if (coords[1] == 0) {
+                neighbors.push_back({2, -2, coords[2] + 1});
+                neighbors.push_back({2, -1, coords[2] + 1});
+                neighbors.push_back({2,  0, coords[2] + 1});
+                neighbors.push_back({2,  1, coords[2] + 1});
+                neighbors.push_back({2,  2, coords[2] + 1});
+            }
+    }
+    switch (coords[1]) {
+        case -2:
+            // Top outer edge
+            neighbors.push_back({0, -1, coords[2] - 1});
+            break;
+        case 2:
+            // Bottom outer edge
+            neighbors.push_back({0, 1, coords[2] - 1});
+            break;
+        case -1:
+            // Top inner edge
+            if (coords[0] == 0) {
+                neighbors.push_back({-2, -2, coords[2] + 1});
+                neighbors.push_back({-1, -2, coords[2] + 1});
+                neighbors.push_back({ 0, -2, coords[2] + 1});
+                neighbors.push_back({ 1, -2, coords[2] + 1});
+                neighbors.push_back({ 2, -2, coords[2] + 1});
+            }
+            break;
+        case 1:
+            if (coords[0] == 0) {
+                neighbors.push_back({-2, 2, coords[2] + 1});
+                neighbors.push_back({-1, 2, coords[2] + 1});
+                neighbors.push_back({ 0, 2, coords[2] + 1});
+                neighbors.push_back({ 1, 2, coords[2] + 1});
+                neighbors.push_back({ 2, 2, coords[2] + 1});
+            }
+    }
+    return neighbors;
 }
 
 
-grid_type update_grid(const grid_type &current_grid) {
+size_t count_occupied_neighbors(const grid_type &grid,
+                                const std::vector<coord_type> &neighbors) {
+    size_t occupied = 0;
+    for (auto &neigh: neighbors) {
+        occupied += grid.find(neigh) != grid.end() ? 1 : 0;
+    }
+    return occupied;
+}
+
+
+grid_type update_grid(const grid_type &current_grid, bool recursive = false) {
+    // Enable grid to spread
     grid_type new_grid;
-    for (auto &pair: current_grid) {
-        auto coords = pair.first;
-        auto contents = pair.second;
-        auto num_occupied_neighbors = 0;
-        for (auto &neigh: get_neighbors(coords)) {
-            if (current_grid.find(neigh) != current_grid.end()
-                && current_grid.at(neigh) == Occupied::BUG) {
-                ++num_occupied_neighbors;
-            }
+    for (auto &coords: current_grid) {
+        auto neighbors = get_neighbors(coords, recursive);
+        auto num_occupied_neighbors = count_occupied_neighbors(
+            current_grid, neighbors);
+        if (num_occupied_neighbors == 1) {
+            // This bug survives into the next minute
+            new_grid.insert(coords);
         }
-        if (contents == Occupied::BUG) {
-            new_grid[coords] = num_occupied_neighbors == 1 ? Occupied::BUG : Occupied::EMPTY;
-        } else if (num_occupied_neighbors == 1
-                   || num_occupied_neighbors == 2) {
-            new_grid[coords] = Occupied::BUG;
-        } else {
-            new_grid[coords] = Occupied::EMPTY;
+        for (auto &neigh: neighbors) {
+            auto neigh_occupied = current_grid.find(neigh) != current_grid.end();
+            if (neigh_occupied) {
+                // Since this cell is occupied, we will get to it
+                // (or have already gotten to it) in the outer for loop
+                continue;
+            }
+            auto neigh_occupied_neighbors = count_occupied_neighbors(
+                current_grid, get_neighbors(neigh, recursive));
+            if (neigh_occupied_neighbors == 1 || neigh_occupied_neighbors == 2) {
+                new_grid.insert(neigh);
+            }
         }
     }
     return new_grid;
 }
 
 
-std::vector<Occupied> grid_to_vector(const grid_type &grid) {
-    std::vector<Occupied> vec(grid.size());
-    size_t i = 0;
-    for (auto iter = grid.begin(); iter != grid.end(); ++iter, ++i) {
-        vec[i] = iter->second;
+void print_grid(const grid_type &grid, int depth = 0) {
+    for (auto row = -2; row <= 2; ++row) {
+        for (auto col = -2; col <= 2; ++col) {
+            coord_type coords{col, row, depth};
+            std::cout << (grid.find(coords) != grid.end() ? '#' : '.');
+        }
+        std::cout << std::endl;
     }
-    return vec;
+    std::cout << std::endl;
 }
 
 
-void print_grid(const grid_type &grid) {
-    auto i = 0;
-    for (auto iter = grid.begin(); iter != grid.end(); ++iter, ++i) {
-        std::cout << static_cast<char>(iter->second);
-        if (i % 5 == 4) {
-            std::cout << std::endl;
+long long calculate_biodiversity(const grid_type &grid, int depth = 0) {
+    long long rating = 0, mult = 1;
+    for (auto row = -2; row <= 2; ++row) {
+        for (auto col = -2; col <= 2; ++col, mult *= 2) {
+            coord_type coords{col, row, depth};
+            rating += grid.find(coords) != grid.end() ? mult : 0;
         }
     }
-    std::cout << std::endl;
+    return rating;
 }
 
 
@@ -81,34 +178,41 @@ int main(int argc, char **argv) {
     auto input_stream = open_input_file(argc, argv);
     grid_type grid;
     std::string line;
-    size_t row = 0;
+    int row = -2;
     while (std::getline(input_stream, line)) {
-        for (size_t col = 0; col < line.size(); ++col) {
-            grid[coord_type{row, col}] = static_cast<Occupied>(line[col]);
+        for (int col = -2; col < static_cast<int>(line.size()); ++col) {
+            if (line[col + 2] == '#') {
+                grid.insert({col, row, 0});
+            }
         }
         ++row;
     }
 
-    std::set<std::vector<Occupied> > seen;
-    std::vector<Occupied> state;
-   while (true) {
-        state = grid_to_vector(grid);
-        if (seen.find(state) != seen.end()) {
+    // print_grid(grid);
+    grid_type orig_grid = grid;
+
+    std::set<std::set<coord_type> > seen_grids;
+    while (true) {
+        if (seen_grids.find(grid) != seen_grids.end()) {
             break;
         }
-        seen.insert(state);
+        seen_grids.insert(grid);
         grid = update_grid(grid);
+        // print_grid(grid);
     }
+    // print_grid(grid);
+    auto rating = calculate_biodiversity(grid);
 
-    long long rating = 0;
-    for (size_t i = 0; i < state.size(); ++i) {
-        auto x = state[i] == Occupied::BUG ? 1 : 0;
-        rating += x * std::pow(2ll, i);
+    // Reset grid to its original state for part 2
+    grid = orig_grid;
+    for (auto min = 0; min < 200; ++min) {
+        grid = update_grid(grid, true);
     }
 
     std::cout << "PART 1" << std::endl;
     std::cout << "Biodiversity rating: " << rating << std::endl;
     std::cout << std::endl;
     std::cout << "PART 2" << std::endl;
+    std::cout << "Number of bugs after 200 minutes: " << grid.size() << std::endl;
     return 0;
 }
