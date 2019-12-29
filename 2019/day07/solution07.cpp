@@ -14,6 +14,7 @@ using phase_settings_type = std::array<intcode_type, 5>;
 
 // This is very slow. Maybe running the intcode program is taking a long time?
 // Maybe all the thread-switching is adding a lot of overhead?
+// It also doesn't appear to be totally deterministic, which is concerning.
 intcode_type simulate_phase_settings(program_type program,
                                      const phase_settings_type &phase_settings) {
     MultiQueue<intcode_type> mq;
@@ -22,7 +23,7 @@ intcode_type simulate_phase_settings(program_type program,
         mq.push_queue(i, phase_settings[i]);
 
         auto get_input = [&mq, i]() -> intcode_type {
-            return mq.pop_queue(i);
+            return mq.pop_queue_blocking(i);
         };
 
         auto size = phase_settings.size();
@@ -43,7 +44,7 @@ intcode_type simulate_phase_settings(program_type program,
         thd.join();
     }
     // Return final output from last thruster
-    return mq.pop_queue(0);
+    return mq.pop_queue_blocking(0);
 }
 
 
