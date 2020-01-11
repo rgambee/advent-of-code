@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
                                layer_with_fewest_zeros->end(), 2);
 
     std::cout << "PART 1" << std::endl;
-    std::cout << "Number of 1s times number of 2s " << num_ones * num_twos << std::endl;
+    std::cout << "Number of 1s times number of 2s: " << num_ones * num_twos << std::endl;
     std::cout << std::endl;
     std::cout << "PART 2" << std::endl;
     render_image(layers);
