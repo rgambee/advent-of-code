@@ -2,6 +2,8 @@
 #include <iostream>
 #include <list>
 #include <set>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 
@@ -160,10 +162,6 @@ void clear_distances(grid_type &grid) {
             node.distance = -1;
         }
     }
-    if (grid[CENTER][CENTER].distance != -1) {
-        std::cerr << "Uh-oh" << std::endl;
-        exit(99);
-    }
 }
 
 
@@ -252,8 +250,9 @@ void update_maze(grid_type &grid, Droid &droid,
             break;
         }
         default:
-            std::cerr << "Invalid intcode output: " << reply << std::endl;
-            exit(3);
+            std::stringstream error_message;
+            error_message << "Invalid intcode output: " << reply;
+            throw std::runtime_error(error_message.str());
     }
     // draw_grid(grid, droid);
     // auto &curr_cell = grid[droid.position[0]][droid.position[1]];

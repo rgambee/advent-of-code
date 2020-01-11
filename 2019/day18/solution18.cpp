@@ -3,6 +3,8 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <sstream>
+#include <stdexcept>
 
 #include "utils.h"
 
@@ -34,8 +36,9 @@ bool is_key(char c) {
 
 char key_to_door(char k) {
     if (!is_key(k)) {
-        std::cerr << "Not a key: " << k << std::endl;
-        exit(3);
+        std::stringstream error_message;
+        error_message << "Not a key: " << k;
+        throw std::invalid_argument(error_message.str());
     }
     return k + ('A' - 'a');
 }
@@ -43,8 +46,9 @@ char key_to_door(char k) {
 
 char door_to_key(char d) {
     if (!is_door(d)) {
-        std::cerr << "Not a door: " << d << std::endl;
-        exit(3);
+        std::stringstream error_message;
+        error_message << "Not a door: " << d;
+        throw std::invalid_argument(error_message.str());
     }
     return d + ('a' - 'A');
 }

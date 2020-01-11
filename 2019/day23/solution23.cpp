@@ -1,5 +1,7 @@
 #include <iostream>
 #include <map>
+#include <sstream>
+#include <stdexcept>
 #include <thread>
 #include <utility>
 
@@ -45,8 +47,9 @@ std::thread launch_thread(const program_type &program,
             auto dest = values[0], x = values[1], y = values[2];
             if (dest < 0 || (dest >= static_cast<intcode_type>(NUM_COMPUTERS)
                              && dest != NAT_ADDRESS)) {
-                std::cerr << "Invalid destination address: " << dest << std::endl;
-                exit(5);
+                std::stringstream error_message;
+                error_message << "Invalid destination address: " << dest;
+                throw std::runtime_error(error_message.str());
             }
             input_queue.push_queue(dest, {x, y});
         }

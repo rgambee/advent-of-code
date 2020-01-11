@@ -3,6 +3,7 @@
 #include <iostream>
 #include <valarray>
 #include <cmath>
+#include <stdexcept>
 #include <string>
 
 #include "utils.h"
@@ -46,8 +47,8 @@ int main(int argc, char **argv) {
 
     auto log = std::log2(list.size());
     if (log != std::floor(log)) {
-        std::cerr << "Input list length is not a power of 2" << std::endl;
-        exit(3);
+        throw std::runtime_error(
+            "Input list length is not a power of 2");
     }
 
     for (auto phase = 0; phase < NUM_PHASES; ++phase) {

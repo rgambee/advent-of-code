@@ -6,6 +6,7 @@
 #include <map>
 #include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <vector>
 
 #include "intcode.h"
@@ -84,8 +85,9 @@ coord_type get_coords_in_direction(const coord_type &coords,
         case Direction::WEST:
             return coord_type{coords[0], coords[1] - 1};
         default:
-            std::cerr << "Unknown direction: " << static_cast<char>(dir) << std::endl;
-            exit(5);
+            std::stringstream error_message;
+            error_message << "Unknown direction: " << static_cast<char>(dir);
+            throw std::invalid_argument(error_message.str());
     }
 }
 
@@ -102,8 +104,9 @@ void add_grid_cell(grid_type &grid,
             robo.facing = static_cast<Direction>(camera_output);
             robo.position = coord_type{row, col};
         } else {
-            std::cerr << "Invalid camera output: " << camera_output;
-            exit(5);
+            std::stringstream error_message;
+            error_message << "Invalid camera output: " << camera_output;
+            throw std::runtime_error(error_message.str());
         }
     }
     auto new_cell = std::make_shared<Cell>(new_cell_type);
@@ -161,8 +164,7 @@ std::vector<Move> follow_scaffold(const grid_type &grid,
     while (true) {
         auto cell = grid.at(robo.position);
         if (cell->type != CellType::SCAFFOLD) {
-            std::cerr << "Robot is not on scaffold" << std::endl;
-            exit(6);
+            throw std::logic_error("Robot is not on scaffold");
         }
         auto forward_coords = get_coords_in_direction(robo.position, robo.facing);
         if (grid.find(forward_coords) != grid.end()
@@ -234,8 +236,8 @@ std::vector<std::vector<size_t> > valid_move_functions(
     //      Fully describe the input move sequence
     //      Main movement routine is not longer than max_length function calls
     if (func_starts.size() != func_lengths.size()) {
-        std::cerr << "func_starts and func_lengths do not have the same size" << std::endl;
-        exit(5);
+        throw std::invalid_argument(
+            "func_starts and func_lengths do not have the same size");
     }
     std::vector<size_t> func_ends(func_starts.size());
     std::vector<std::string> func_strings(func_starts.size());

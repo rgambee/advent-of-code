@@ -1,6 +1,8 @@
 #include <cmath>
 #include <iostream>
 #include <regex>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -22,8 +24,9 @@ constexpr long long STARTING_ORE = 1000000000000;
 quantity_type string_to_quantity(const std::string &input_str) {
     std::smatch match;
     if (!std::regex_match(input_str, match, QUANT_REGEX)) {
-        std::cerr << "No match for string: " << input_str << std::endl;
-        exit(3);
+        std::stringstream error_message;
+        error_message << "No match for string: " << input_str;
+        throw std::invalid_argument(error_message.str());
     }
     auto num = std::stoi(match.str(1));
     chem_type chem = match.str(2);
@@ -64,8 +67,7 @@ void make_fuel(const std::unordered_map<chem_type, reaction_type> &reactions,
                     static_cast<float>(num_required)
                     / static_cast<float>(producing_reaction.second.second)));
                 if (n == 0) {
-                    std::cerr << "Replacing with zero reactions" << std::endl;
-                    exit(4);
+                    throw std::logic_error("Replacing with zero reactions");
                 }
                 for (auto &quant: producing_reaction.first) {
                     final_reaction.first[quant.first] += n * quant.second;
@@ -104,8 +106,9 @@ int main(int argc, char **argv) {
             auto result = reactions.emplace(
                 products.first, reaction_type{reactants, products});
             if (!result.second) {
-                std::cerr << "Multiple reactions produce " << products.first << std::endl;
-                exit(4);
+                std::stringstream error_message;
+                error_message << "Multiple reactions produce " << products.first;
+                throw std::runtime_error(error_message.str());
             }
         } else {
             std::cerr << "Could not parse line: " << line << std::endl;

@@ -2,6 +2,8 @@
 #include <array>
 #include <iostream>
 #include <limits>
+#include <sstream>
+#include <stdexcept>
 #include <vector>
 
 #include "utils.h"
@@ -31,8 +33,9 @@ void render_image(std::vector<layer_type> layers) {
                     case TRANS_NUM:
                         continue;
                     default:
-                        std::cerr << "Invalid digit " << (*iter)[i] << std::endl;
-                        exit(3);
+                        std::stringstream error_message;
+                        error_message << "Invalid digit " << (*iter)[i];
+                        throw std::logic_error(error_message.str());
                 }
                 break;
             }

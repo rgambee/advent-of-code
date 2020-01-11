@@ -1,6 +1,8 @@
 #include <iostream>
 #include <memory>
 #include <regex>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 
@@ -59,8 +61,9 @@ std::shared_ptr<Body> get_body(
     std::unordered_map<std::string, std::shared_ptr<Body> > &bodies,
     const std::string &name) {
     if (bodies.find(name) == bodies.end()) {
-        std::cerr << "Could not find body named " << name << std::endl;
-        exit(4);
+        std::stringstream error_message;
+        error_message << "Could not find body named " << name;
+        throw std::invalid_argument(error_message.str());
     }
     return bodies[name];
 }
@@ -76,8 +79,9 @@ int main(int argc, char **argv) {
         std::smatch match;
         if (std::regex_match(line, match, line_regex)) {
             if (match.size() != 3) {
-                std::cerr << "Unexpected number of matches for line: " << line << std::endl;
-                exit(3);
+                std::stringstream error_message;
+                error_message << "Unexpected number of matches for line: " << line;
+                throw std::runtime_error(error_message.str());
             }
             auto parent_name = match.str(1);
             auto satellite_name = match.str(2);

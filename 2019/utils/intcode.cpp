@@ -1,5 +1,7 @@
 #include <cmath>
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 
 #include "intcode.h"
@@ -30,8 +32,9 @@ Opcode int_to_opcode(intcode_type integer) {
         case 99:
             return Opcode::END;
         default:
-            std::cerr << "Unknown opcode: " << integer << std::endl;
-            exit(3);
+            std::stringstream error_message;
+            error_message << "Unknown opcode: " << integer;
+            throw std::invalid_argument(error_message.str());
     }
 }
 
@@ -53,8 +56,9 @@ std::vector<Mode> int_to_modes(intcode_type integer, int num_operands) {
                 result[place] = Mode::RELATIVE;
                 break;
             default:
-                std::cerr << "Unknown mode: " << digit;
-                exit(3);
+                std::stringstream error_message;
+                error_message << "Unknown mode: " << digit;
+                throw std::invalid_argument(error_message.str());
         }
     }
     return result;
@@ -75,8 +79,9 @@ program_type load_intcode_program(std::istream &input_stream) {
 
 void check_index(intcode_type index) {
     if (index < 0) {
-        std::cerr << "Index out of range: " << index << std::endl;
-        exit(4);
+        std::stringstream error_message;
+        error_message << "Index out of range: " << index;
+        throw std::out_of_range(error_message.str());
     }
 }
 
@@ -109,9 +114,10 @@ intcode_type run_intcode_program(program_type program,
                 auto modes = int_to_modes(program[pc], num_operands);
                 if (opcode == Opcode::INPUT && modes[0] != Mode::POSITIONAL
                     && modes[0] != Mode::RELATIVE) {
-                    std::cerr << "Opcode " << static_cast<int>(opcode);
-                    std::cerr << " expects positional operand mode" << std::endl;
-                    exit(3);
+                    std::stringstream error_message;
+                    error_message << "Opcode " << static_cast<int>(opcode);
+                    error_message << " expects positional operand mode";
+                    throw std::logic_error(error_message.str());
                 }
                 auto parameter = program[pc+1];
                 intcode_type value;
@@ -128,8 +134,9 @@ intcode_type run_intcode_program(program_type program,
                         value = program[relative_base + parameter];
                         break;
                     default:
-                        std::cerr << "Unexpected mode: " << static_cast<int>(modes[0]) << std::endl;
-                        exit(3);
+                        std::stringstream error_message;
+                        error_message << "Unexpected mode: " << static_cast<int>(modes[0]);
+                        throw std::logic_error(error_message.str());
                 }
                 switch (opcode) {
                     case Opcode::INPUT:
@@ -141,8 +148,9 @@ intcode_type run_intcode_program(program_type program,
                                 program[relative_base + parameter] = input();
                                 break;
                             default:
-                                std::cerr << "Unexpected mode: " << static_cast<int>(modes[0]) << std::endl;
-                                exit(3);
+                                std::stringstream error_message;
+                                error_message << "Unexpected mode: " << static_cast<int>(modes[0]);
+                                throw std::logic_error(error_message.str());
                         }
                         break;
                     case Opcode::OUTPUT:
@@ -152,8 +160,9 @@ intcode_type run_intcode_program(program_type program,
                         relative_base += value;
                         break;
                     default:
-                        std::cerr << "Unexpected opcode: " << static_cast<int>(opcode) << std::endl;
-                        exit(3);
+                        std::stringstream error_message;
+                        error_message << "Unexpected opcode: " << static_cast<int>(opcode);
+                        throw std::logic_error(error_message.str());
                 }
                 pc += num_operands + 1;
                 break;
@@ -177,8 +186,9 @@ intcode_type run_intcode_program(program_type program,
                         condition = static_cast<bool>(program[relative_base + program[pc+1]]);
                         break;
                     default:
-                        std::cerr << "Unexpected mode: " << static_cast<int>(modes[0]) << std::endl;
-                        exit(3);
+                        std::stringstream error_message;
+                        error_message << "Unexpected mode: " << static_cast<int>(modes[0]);
+                        throw std::logic_error(error_message.str());
                 }
                 switch (modes[1]) {
                     case Mode::POSITIONAL:
@@ -193,8 +203,9 @@ intcode_type run_intcode_program(program_type program,
                         destination = program[relative_base + program[pc+2]];
                         break;
                     default:
-                        std::cerr << "Unexpected mode: " << static_cast<int>(modes[1]) << std::endl;
-                        exit(3);
+                        std::stringstream error_message;
+                        error_message << "Unexpected mode: " << static_cast<int>(modes[1]);
+                        throw std::logic_error(error_message.str());
                 }
                 switch (opcode) {
                     case Opcode::JUMP_TRUE:
@@ -204,8 +215,9 @@ intcode_type run_intcode_program(program_type program,
                         pc = !condition ? destination : pc + num_operands + 1;
                         break;
                     default:
-                        std::cerr << "Unexpected opcode: " << static_cast<int>(opcode) << std::endl;
-                        exit(3);
+                        std::stringstream error_message;
+                        error_message << "Unexpected opcode: " << static_cast<int>(opcode);
+                        throw std::logic_error(error_message.str());
                 }
                 break;
             }
@@ -229,8 +241,9 @@ intcode_type run_intcode_program(program_type program,
                         input_a = program[relative_base + program[pc+1]];
                         break;
                     default:
-                        std::cerr << "Unexpected mode: " << static_cast<int>(modes[0]) << std::endl;
-                        exit(3);
+                        std::stringstream error_message;
+                        error_message << "Unexpected mode: " << static_cast<int>(modes[0]);
+                        throw std::logic_error(error_message.str());
                 }
                 switch (modes[1]) {
                     case Mode::POSITIONAL:
@@ -245,8 +258,9 @@ intcode_type run_intcode_program(program_type program,
                         input_b = program[relative_base + program[pc+2]];
                         break;
                     default:
-                        std::cerr << "Unexpected mode: " << static_cast<int>(modes[1]) << std::endl;
-                        exit(3);
+                        std::stringstream error_message;
+                        error_message << "Unexpected mode: " << static_cast<int>(modes[1]);
+                        throw std::logic_error(error_message.str());
                 }
                 switch (modes[2]) {
                     case Mode::POSITIONAL:
@@ -258,10 +272,11 @@ intcode_type run_intcode_program(program_type program,
                         check_index(output_index);
                         break;
                     default:
-                        std::cerr << "Opcode " << static_cast<int>(opcode);
-                        std::cerr << " expects positional or relative mode";
-                        std::cerr << " for final operand" << std::endl;
-                        exit(3);
+                        std::stringstream error_message;
+                        error_message << "Opcode " << static_cast<int>(opcode);
+                        error_message << " expects positional or relative mode";
+                        error_message << " for final operand";
+                        std::logic_error(error_message.str());
                 }
                 intcode_type result = -1;
                 switch (opcode) {
@@ -278,16 +293,18 @@ intcode_type run_intcode_program(program_type program,
                         result = input_a == input_b ? 1 : 0;
                         break;
                     default:
-                        std::cerr << "Unexpected opcode: " << static_cast<int>(opcode) << std::endl;
-                        exit(3);
+                        std::stringstream error_message;
+                        error_message << "Unexpected opcode: " << static_cast<int>(opcode);
+                        throw std::logic_error(error_message.str());
                 }
                 program[output_index] = result;
                 pc += num_operands + 1;
                 break;
             }
             default:
-                std::cerr << "Unexpected opcode: " << static_cast<int>(opcode) << std::endl;
-                exit(3);
+                std::stringstream error_message;
+                error_message << "Unexpected opcode: " << static_cast<int>(opcode);
+                throw std::logic_error(error_message.str());
         }
     }
     return program[0];

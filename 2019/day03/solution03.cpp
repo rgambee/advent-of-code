@@ -10,6 +10,7 @@
 #include <list>
 #include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -95,8 +96,9 @@ std::shared_ptr<Node> construct_wire(const std::string &path) {
         } else if (dir == 'R') {
             new_coord = coord_type{curr_coord[0] + dist, curr_coord[1]};
         } else {
-            std::cerr << "Unknown direction: " << dir << std::endl;
-            exit(3);
+            std::stringstream error_message;
+            error_message << "Unknown direction: " << dir;
+            throw std::runtime_error(error_message.str());
         }
         auto new_node = std::make_shared<Node>(new_coord);
         current_node->add_neighbor(new_node);
@@ -118,10 +120,11 @@ int get_segment_axis(const coord_type &coordA,
         // Horizontal
         return 0;
     }
-    std::cerr << "Invalid segment:";
-    std::cerr << "(" << coordA[0] << ", " << coordA[1] << ") ";
-    std::cerr << "(" << coordB[0] << ", " << coordB[1] << ")" << std::endl;
-    exit(4);
+    std::stringstream error_message;
+    error_message << "Invalid segment:";
+    error_message << "(" << coordA[0] << ", " << coordA[1] << ") ";
+    error_message << "(" << coordB[0] << ", " << coordB[1] << ")";
+    throw std::invalid_argument(error_message.str());
 }
 
 
@@ -220,10 +223,11 @@ void compute_steps(std::shared_ptr<Node> origin) {
         for (auto iter = active_nodes.begin(); iter != active_nodes.end(); ++iter) {
             auto steps = (*iter)->guess_steps();
             if (steps < 0) {
-                std::cerr << "Unable to guess steps for node at (";
-                std::cerr << (*iter)->coords[0] << ", " << (*iter)->coords[1];
-                std::cerr << ")" << std::endl;
-                exit(6);
+                std::stringstream error_message;
+                error_message << "Unable to guess steps for node at (";
+                error_message << (*iter)->coords[0] << ", " << (*iter)->coords[1];
+                error_message << ")";
+                throw std::logic_error(error_message.str());
             }
             if (steps < fewest_steps) {
                 fewest_steps = steps;

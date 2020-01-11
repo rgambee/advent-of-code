@@ -3,6 +3,8 @@
 #include <iostream>
 #include <limits>
 #include <set>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -73,8 +75,9 @@ int main(int argc, char **argv) {
             } else if (c == '.') {
                 row.push_back(false);
             } else {
-                std::cerr << "Unknown input character " << c << std::endl;
-                exit(3);
+                std::stringstream error_message;
+                error_message << "Unknown input character " << c;
+                throw std::runtime_error(error_message.str());
             }
         }
         asteroids.push_back(row);
@@ -175,8 +178,7 @@ int main(int argc, char **argv) {
             // std::cout << "To remove: (" << asteroid_to_remove[0] << ", ";
             // std::cout << asteroid_to_remove[1] << ")" << std::endl;
             if (!asteroids[asteroid_to_remove[0]][asteroid_to_remove[1]]) {
-                std::cerr << "Asertoid not present" << std::endl;
-                exit(4);
+                throw std::logic_error("Asertoid not present");
             }
             asteroids[asteroid_to_remove[0]][asteroid_to_remove[1]] = false;
             ++num_removed;

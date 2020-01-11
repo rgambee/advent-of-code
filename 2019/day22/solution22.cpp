@@ -3,6 +3,8 @@
 #include <list>
 #include <memory>
 #include <regex>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -212,8 +214,9 @@ int main(int argc, char **argv) {
             instructions.push_back(std::make_shared<Cut>(
                 std::stoi(match.str(1))));
         } else {
-            std::cerr << "Invalid line: " << line << std::endl;
-            exit(3);
+            std::stringstream error_message;
+            error_message << "Invalid line: " << line;
+            throw std::runtime_error(error_message.str());
         }
     }
 

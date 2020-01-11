@@ -4,6 +4,8 @@
 #include <limits>
 #include <map>
 #include <set>
+#include <sstream>
+#include <stdexcept>
 
 #include "intcode.h"
 #include "utils.h"
@@ -82,9 +84,10 @@ public:
                 }
                 break;
             default:
-                std::cerr << "Relative direction must be LEFT or RIGHT, not ";
-                std::cerr << int(relative_dir) << std::endl;
-                exit(3);
+                std::stringstream error_message;
+                error_message << "Relative direction must be LEFT or RIGHT, not ";
+                error_message << int(relative_dir);
+                throw std::invalid_argument(error_message.str());
         }
         return facing;
     }

@@ -1,14 +1,17 @@
 #include <array>
 #include <cmath>
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 
 int main(int argc, char **argv) {
     if (argc != 3) {
-        std::cerr << "Usage: " << argv[0] << "range-start range-end" << std::endl;
-        exit(1);
+        std::stringstream error_message;
+        error_message << "Usage: " << argv[0] << "range-start range-end";
+        throw std::runtime_error(error_message.str());
     }
 
     int start = std::stoi(argv[1]);

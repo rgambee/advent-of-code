@@ -1,6 +1,8 @@
 #include <array>
 #include <iostream>
 #include <map>
+#include <sstream>
+#include <stdexcept>
 
 #include "intcode.h"
 #include "utils.h"
@@ -70,8 +72,9 @@ int main(int argc, char **argv) {
                 }
                 break;
             default:
-                std::cerr << "Invalid output index: " << output_index << std::endl;
-                exit(3);
+                std::stringstream error_message;
+                error_message << "Invalid output index: " << output_index;
+                throw std::logic_error(error_message.str());
         }
         output_index = (output_index + 1) % 3;
     };
