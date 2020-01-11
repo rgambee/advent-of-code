@@ -19,7 +19,7 @@ enum class TileType {
     START = '@',
     DOOR,
     KEY
-}
+};
 
 
 bool is_door(char c) {
@@ -67,9 +67,9 @@ public:
     }
 
     const coord_type coords{0, 0};
-    auto distance = -1;
+    int distance = -1;
     const key_type required_key = 0;
-}
+};
 
 using grid_type = std::map<coord_type, std::shared_ptr<Node> >;
 
