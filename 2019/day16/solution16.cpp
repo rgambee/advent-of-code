@@ -1,66 +1,84 @@
-// Solution based on https://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm
-
 #include <iostream>
 #include <valarray>
 #include <cmath>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 
 #include "utils.h"
 
 
-constexpr auto NUM_PHASES = 1;//100;
-constexpr auto REPEATS = 1;//10000;
+constexpr auto NUM_PHASES = 100;
+constexpr auto REPEATS = 10000;
+constexpr auto OFFSET_LENGTH = 7;
+constexpr auto OUTPUT_LENGTH = 8;
 const std::valarray<int> BASE_PATTERN{0, 1, 0, -1};
-
-
-// This could be optimized to reduce the amount of copying that happens
-std::valarray<int> fft(const std::valarray<int> &input_list) {
-    auto N = input_list.size();
-    std::valarray<int> output_list(N);
-    if (N == 1) {
-        return input_list;
-    }
-
-    output_list[std::slice(0, N / 2, 1)] = fft(input_list[std::slice(0, N/2, 2)]);
-    output_list[std::slice(N / 2, N / 2, 1)] = fft(input_list[std::slice(1, N/2, 2)]);
-    for (size_t k = 0; k < N / 2; ++k) {
-        auto temp = output_list[k];
-        auto twiddle = BASE_PATTERN[((k + 1) * BASE_PATTERN.size() / N) % BASE_PATTERN.size()];
-        output_list[k] = std::abs((temp + twiddle * output_list[k + N / 2]) % 10);
-        output_list[k + N / 2] = std::abs((temp - twiddle * output_list[k + N / 2]) % 10);
-    }
-    return output_list;
-}
 
 
 int main(int argc, char **argv) {
     auto input_stream = open_input_file(argc, argv);
     std::string line;
     std::getline(input_stream, line);
-    std::valarray<int> list(line.size() * REPEATS);
-    for (size_t i = 0; i < REPEATS; ++i) {
-        for (size_t j = 0; j < line.size(); ++j) {
-            list[i * line.size() + j] = line[j] - '0';
+    std::valarray<int> list(line.size());
+    for (std::string::size_type i = 0; i < line.size(); ++i) {
+        list[i] = line[i] - '0';
+    }
+    // Save a copy of the original list for later
+    std::valarray<int> original_list(list);
+
+    // Solve part 1 using the naive approach
+    std::valarray<int> pattern(list.size());
+    std::valarray<int> next_list(list.size());
+    for (auto phase = 0; phase < NUM_PHASES; ++phase) {
+        for (size_t output_index = 0; output_index < list.size(); ++output_index) {
+            for (size_t i = 0; i < pattern.size(); ++i) {
+                auto base_index = ((i + 1) / (output_index + 1) % BASE_PATTERN.size());
+                pattern[i] = BASE_PATTERN[base_index];
+            }
+
+            next_list[output_index] = std::abs((list * pattern).sum()) % 10;
         }
+        list = next_list;
+    }
+    auto part1_answer = 0;
+    for (auto i = 0; i < OUTPUT_LENGTH; ++i) {
+        part1_answer = part1_answer * 10 + list[i];
     }
 
-    auto log = std::log2(list.size());
-    if (log != std::floor(log)) {
-        throw std::runtime_error(
-            "Input list length is not a power of 2");
+    // For part 2, we can use the fact that in the second half of the list,
+    // each element is dependent only on the ones after it from the previous phase.
+    std::vector<int> full_list;
+    full_list.reserve(original_list.size() * REPEATS);
+    for (auto i = 0; i < REPEATS; ++i) {
+        full_list.insert(full_list.end(), std::begin(original_list),
+                        std::end(original_list));
+    }
+
+    size_t offset = 0;
+    for (auto i = 0; i < OFFSET_LENGTH; ++i) {
+        offset = offset * 10 + original_list[i];
+    }
+
+    if (offset < full_list.size() / 2 || offset >= full_list.size() - OUTPUT_LENGTH) {
+        std::stringstream error_message;
+        error_message << "Cannot compute solution for offset " << offset;
+        throw std::runtime_error(error_message.str());
     }
 
     for (auto phase = 0; phase < NUM_PHASES; ++phase) {
-        list = fft(list);
+        for (size_t i = full_list.size() - 2; i >= offset; --i) {
+            full_list[i] = std::abs(full_list[i] +  full_list[i + 1]) % 10;
+        }
+    }
+    auto part2_answer = 0;
+    for (auto i = offset; i < offset + OUTPUT_LENGTH; ++i) {
+        part2_answer = part2_answer * 10 + full_list[i];
     }
 
     std::cout << "PART 1" << std::endl;
-    std::cout << "First 8 digits of final list: ";
-    for (int i = 0; i < 8; ++i) {
-        std::cout << list[i];
-    }
+    std::cout << "First digits of final list: " << part1_answer << std::endl;
     std::cout << std::endl;
     std::cout << "PART 2" << std::endl;
+    std::cout << "Digits at given offset: " << part2_answer << std::endl;
     return 0;
 }
