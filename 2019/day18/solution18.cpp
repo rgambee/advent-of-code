@@ -243,18 +243,38 @@ int main(int argc, char **argv) {
             }
         }
     }
-    if (starts.empty()) {
-        throw std::runtime_error("Could not find starting location(s)");
+    if (starts.size() != 1) {
+        throw std::runtime_error("Didn't find unique starting location");
     }
 
     std::set<key_type> keys;
     std::map<std::tuple<std::vector<coord_type>, std::set<key_type> >, int> score_memo;
     auto part1_result = score(grid, starts, keys, total_number_of_keys, score_memo);
 
+    // Modify the maze for part 2
+    for (auto x: {-1, 0, 1}) {
+        for (auto y: {-1, 0, 1}) {
+            coord_type coords{starts[0][0] + x, starts[0][1] + y};
+            if (x == 0 || y == 0) {
+                // Add a wall at this location (i.e. remove it from the grid)
+                grid.erase(coords);
+            } else if (!(x == 0 && y == 0)) {
+                // Add this as a starting location
+                starts.push_back(coords);
+            }
+        }
+    }
+    // Remove central starting location
+    starts.erase(starts.begin());
+
+    keys.clear();
+    score_memo.clear();
+    auto part2_result = score(grid, starts, keys, total_number_of_keys, score_memo);
+
     std::cout << "PART 1" << std::endl;
     std::cout << "Shortest path to collect all keys: " << part1_result << std::endl;
     std::cout << std::endl;
     std::cout << "PART 2" << std::endl;
-    std::cout << "Please edit the input maze for part 2";
+    std::cout << "Shortest path to collect all keys: " << part2_result << std::endl;
     return 0;
 }
