@@ -1,4 +1,4 @@
-export {readFile};
+export {readFile, splitIntoLines};
 
 function readFile(fileName) {
     console.log('Reading from ', fileName);
@@ -17,4 +17,10 @@ function readFile(fileName) {
 
     request.send();
     return contents;
+}
+
+function splitIntoLines(fileContents) {
+    let lines = fileContents.split('\n');
+    lines = lines.filter(line => line.length > 0);
+    return lines;
 }
