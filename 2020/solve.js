@@ -3,6 +3,7 @@
 import {main01} from './day01/solution01.js';
 import {main02} from './day02/solution02.js';
 import {main03} from './day03/solution03.js';
+import {main04} from './day04/solution04.js';
 
 function solve01() {
     const result = main01('./day01/input01.txt');
@@ -21,6 +22,12 @@ function solve03() {
     document.getElementById('solution03').innerHTML = JSON.stringify(result);
 }
 document.getElementById('button03').onclick = solve03;
+
+function solve04() {
+    const result = main04('./day04/input04.txt');
+    document.getElementById('solution04').innerHTML = JSON.stringify(result);
+}
+document.getElementById('button04').onclick = solve04;
 
 function generateFavicon(numStars) {
     console.log('Generating favicon...');
@@ -50,4 +57,4 @@ function generateFavicon(numStars) {
     console.log('Generated favicon');
     return canvas.toDataURL();
 }
-document.getElementById('favicon-link').href = generateFavicon(6);
+document.getElementById('favicon-link').href = generateFavicon(8);

@@ -19,8 +19,10 @@ function readFile(fileName) {
     return contents;
 }
 
-function splitIntoLines(fileContents) {
+function splitIntoLines(fileContents, stripEmptyLines=true) {
     let lines = fileContents.split('\n');
-    lines = lines.filter(line => line.length > 0);
+    if (stripEmptyLines) {
+        lines = lines.filter(line => line.length > 0);
+    }
     return lines;
 }
