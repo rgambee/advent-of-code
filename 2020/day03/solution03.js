@@ -1,4 +1,4 @@
-import {readFile, splitIntoLines} from '../util.js';
+import {splitIntoLines} from '../util.js';
 export default main03;
 
 const DOWNS_TO_TRY = [1, 1, 1, 1, 2];
@@ -6,8 +6,8 @@ const RIGHTS_TO_TRY = [1, 3, 5, 7, 1];
 const PART_A_DOWN = 1;
 const PART_A_RIGHT = 3;
 
-function main03(filePath) {
-    const treeMap = splitIntoLines(readFile(filePath));
+function main03(input) {
+    const treeMap = splitIntoLines(input);
 
     let treeCountA;
     let treeProductB = 1;

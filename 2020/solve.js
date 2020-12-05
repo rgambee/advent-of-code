@@ -1,5 +1,7 @@
 'use strict';
 
+import {readFile} from './util.js';
+
 const DAY_NUMBER = 5;
 const NUM_STARS = DAY_NUMBER * 2;
 
@@ -64,8 +66,11 @@ function solveDay(dayString, solutionSpan) {
     const inputPath = `./day${dayString}/input${dayString}.txt`;
     console.log('Module', modulePath, ', input', inputPath);
     import(modulePath).then((solver) => {
-        const result = solver.default(inputPath);
-        solutionSpan.innerHTML = JSON.stringify(result);
+        readFile(inputPath, (fileContents) => {
+            const result = solver.default(fileContents);
+            solutionSpan.innerHTML = JSON.stringify(result);
+            console.log('Solved day', dayString);
+        });
     });
 }
 

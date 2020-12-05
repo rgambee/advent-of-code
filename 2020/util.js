@@ -1,13 +1,12 @@
 export {readFile, splitIntoLines};
 
-function readFile(fileName) {
+function readFile(fileName, callback) {
     console.log('Reading from ', fileName);
-    var contents;
     const request = new XMLHttpRequest();
-    request.open('GET', fileName, false);
+    request.open('GET', fileName);
     request.onload = function () {
         if (request.status === 200) {
-            contents = request.responseText;
+            callback(request.responseText);
         } else {
             console.log('Failed to load file ' + fileName);
             console.log(request.status);
@@ -16,7 +15,6 @@ function readFile(fileName) {
     };
 
     request.send();
-    return contents;
 }
 
 function splitIntoLines(fileContents, stripEmptyLines=true) {

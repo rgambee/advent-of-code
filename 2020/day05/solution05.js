@@ -1,10 +1,10 @@
-import {readFile, splitIntoLines} from '../util.js';
+import {splitIntoLines} from '../util.js';
 export default main05;
 
 const LINE_REGEX = /^(?<row>[FB]{7})(?<col>[LR]{3})$/;
 
-function main05(filePath) {
-    const lines = splitIntoLines(readFile(filePath));
+function main05(input) {
+    const lines = splitIntoLines(input);
 
     let highestIdA = -1;
     const allIds = [];

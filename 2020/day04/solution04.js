@@ -1,7 +1,7 @@
-import {readFile, splitIntoLines} from '../util.js';
+import {splitIntoLines} from '../util.js';
 export default main04;
 
-function main04(filePath) {
+function main04(input) {
     const fieldValidators = {
         byr: isByrValid,
         iyr: isIyrValid,
@@ -12,7 +12,7 @@ function main04(filePath) {
         pid: isPidValid
     };
 
-    const lines = splitIntoLines(readFile(filePath), false);
+    const lines = splitIntoLines(input, false);
     let validCountA = 0;
     let validCountB = 0;
     let passport = {};

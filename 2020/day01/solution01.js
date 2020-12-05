@@ -1,10 +1,10 @@
-import {readFile, splitIntoLines} from '../util.js';
+import {splitIntoLines} from '../util.js';
 export default main01;
 
 const DESIRED_SUM = 2020;
 
-function main01(filePath) {
-    const lines = splitIntoLines(readFile(filePath));
+function main01(input) {
+    const lines = splitIntoLines(input);
     const numbers = [];
     lines.forEach(line => numbers.push(Number(line)));
     const selectedA = findPermutation(numbers, 2);

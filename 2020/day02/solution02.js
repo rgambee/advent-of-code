@@ -1,10 +1,10 @@
-import {readFile, splitIntoLines} from '../util.js';
+import {splitIntoLines} from '../util.js';
 export default main02;
 
 const LINE_REGEX = /^(?<min>[0-9]+)-(?<max>[0-9]+) (?<letter>[a-z]): (?<password>[a-z]+)$/;
 
-function main02(filePath) {
-    const lines = splitIntoLines(readFile(filePath));
+function main02(input) {
+    const lines = splitIntoLines(input);
     let validCountA = 0;
     let validCountB = 0;
     for (let line of lines) {
