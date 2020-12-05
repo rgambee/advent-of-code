@@ -1,40 +1,15 @@
 'use strict';
 
-import {main01} from './day01/solution01.js';
-import {main02} from './day02/solution02.js';
-import {main03} from './day03/solution03.js';
-import {main04} from './day04/solution04.js';
-import {main05} from './day05/solution05.js';
+const DAY_NUMBER = 5;
+const NUM_STARS = DAY_NUMBER * 2;
 
-function solve01() {
-    const result = main01('./day01/input01.txt');
-    document.getElementById('solution01').innerHTML = JSON.stringify(result);
-}
-document.getElementById('button01').onclick = solve01;
+function main() {
+    document.getElementById('favicon-link').href = generateFavicon(NUM_STARS);
 
-function solve02() {
-    const result = main02('./day02/input02.txt');
-    document.getElementById('solution02').innerHTML = JSON.stringify(result);
+    for (let day = 1; day <= DAY_NUMBER; ++day) {
+        appendDay(document.body, day);
+    }
 }
-document.getElementById('button02').onclick = solve02;
-
-function solve03() {
-    const result = main03('./day03/input03.txt');
-    document.getElementById('solution03').innerHTML = JSON.stringify(result);
-}
-document.getElementById('button03').onclick = solve03;
-
-function solve04() {
-    const result = main04('./day04/input04.txt');
-    document.getElementById('solution04').innerHTML = JSON.stringify(result);
-}
-document.getElementById('button04').onclick = solve04;
-
-function solve05() {
-    const result = main05('./day05/input05.txt');
-    document.getElementById('solution05').innerHTML = JSON.stringify(result);
-}
-document.getElementById('button05').onclick = solve05;
 
 function generateFavicon(numStars) {
     console.log('Generating favicon...');
@@ -64,4 +39,34 @@ function generateFavicon(numStars) {
     console.log('Generated favicon');
     return canvas.toDataURL();
 }
-document.getElementById('favicon-link').href = generateFavicon(10);
+
+function appendDay(parentNode, dayNumber) {
+    var dayString = String(dayNumber);
+    if (dayNumber < 10) {
+        dayString = '0' + dayString;
+    }
+    const newPar = document.createElement('p');
+    newPar.appendChild(document.createTextNode('Day ' + dayString));
+
+    const button = document.createElement('button');
+    button.innerHTML = 'Solve';
+    const span = document.createElement('span');
+    button.onclick = () => solveDay(dayString, span);
+
+    newPar.appendChild(button);
+    newPar.appendChild(span);
+    document.body.appendChild(newPar);
+}
+
+function solveDay(dayString, solutionSpan) {
+    console.log('Solving day', dayString);
+    const modulePath = `./day${dayString}/solution${dayString}.js`;
+    const inputPath = `./day${dayString}/input${dayString}.txt`;
+    console.log('Module', modulePath, ', input', inputPath);
+    import(modulePath).then((solver) => {
+        const result = solver.default(inputPath);
+        solutionSpan.innerHTML = JSON.stringify(result);
+    });
+}
+
+document.body.onload = main;

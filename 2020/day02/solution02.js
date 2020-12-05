@@ -1,5 +1,5 @@
 import {readFile, splitIntoLines} from '../util.js';
-export {main02};
+export default main02;
 
 const LINE_REGEX = /^(?<min>[0-9]+)-(?<max>[0-9]+) (?<letter>[a-z]): (?<password>[a-z]+)$/;
 

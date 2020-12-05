@@ -1,5 +1,5 @@
 import {readFile, splitIntoLines} from '../util.js';
-export {main01};
+export default main01;
 
 const DESIRED_SUM = 2020;
 

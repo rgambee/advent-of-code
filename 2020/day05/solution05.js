@@ -1,5 +1,5 @@
 import {readFile, splitIntoLines} from '../util.js';
-export {main05};
+export default main05;
 
 const LINE_REGEX = /^(?<row>[FB]{7})(?<col>[LR]{3})$/;
 

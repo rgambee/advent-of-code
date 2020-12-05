@@ -1,5 +1,5 @@
 import {readFile, splitIntoLines} from '../util.js';
-export {main04};
+export default main04;
 
 function main04(filePath) {
     const fieldValidators = {

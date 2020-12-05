@@ -1,5 +1,5 @@
 import {readFile, splitIntoLines} from '../util.js';
-export {main03};
+export default main03;
 
 const DOWNS_TO_TRY = [1, 1, 1, 1, 2];
 const RIGHTS_TO_TRY = [1, 3, 5, 7, 1];
