@@ -4,6 +4,7 @@ import {main01} from './day01/solution01.js';
 import {main02} from './day02/solution02.js';
 import {main03} from './day03/solution03.js';
 import {main04} from './day04/solution04.js';
+import {main05} from './day05/solution05.js';
 
 function solve01() {
     const result = main01('./day01/input01.txt');
@@ -28,6 +29,12 @@ function solve04() {
     document.getElementById('solution04').innerHTML = JSON.stringify(result);
 }
 document.getElementById('button04').onclick = solve04;
+
+function solve05() {
+    const result = main05('./day05/input05.txt');
+    document.getElementById('solution05').innerHTML = JSON.stringify(result);
+}
+document.getElementById('button05').onclick = solve05;
 
 function generateFavicon(numStars) {
     console.log('Generating favicon...');
@@ -57,4 +64,4 @@ function generateFavicon(numStars) {
     console.log('Generated favicon');
     return canvas.toDataURL();
 }
-document.getElementById('favicon-link').href = generateFavicon(8);
+document.getElementById('favicon-link').href = generateFavicon(10);
