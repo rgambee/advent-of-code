@@ -1,4 +1,7 @@
-export {readFile, splitIntoLines, setIntersection, setUnion};
+export {
+    readFile, splitIntoLines, setIntersection, setUnion, parseProgram,
+    executeInstruction, runProgram
+};
 
 function readFile(fileName, callback) {
     console.log('Reading from ', fileName);
@@ -41,4 +44,81 @@ function setUnion(setA, setB) {
         union.add(item);
     }
     return union;
+}
+
+function parseProgram(lines) {
+    const ACC_REGEX = /acc (?<argument>[+-][0-9]+)/;
+    const JMP_REGEX = /jmp (?<argument>[+-][0-9]+)/;
+    const NOP_REGEX = /nop (?<argument>[+-][0-9]+)/;
+
+    const instructions = [];
+
+    for (const line of lines) {
+        let match = line.match(ACC_REGEX);
+        if (match !== null) {
+            instructions.push({
+                operator: 'acc',
+                argument: Number(match.groups.argument)
+            });
+            continue;
+        }
+        match = line.match(JMP_REGEX);
+        if (match !== null) {
+            instructions.push({
+                operator: 'jmp',
+                argument: Number(match.groups.argument)
+            });
+            continue;
+        }
+        match = line.match(NOP_REGEX);
+        if (match !== null) {
+            instructions.push({
+                operator: 'nop',
+                argument: Number(match.groups.argument)
+            });
+            continue;
+        }
+        console.log('Unable to parse line', line);
+    }
+
+    return instructions;
+}
+
+function executeInstruction(state, instructions) {
+    const newState = {...state};
+    const instruction = instructions[state.programCounter];
+    // console.log('Instruction', instruction);
+    switch (instruction.operator) {
+        case 'acc':
+            newState.accumulator += instruction.argument;
+            ++newState.programCounter;
+            break;
+        case 'jmp':
+            newState.programCounter += instruction.argument;
+            break;
+        case 'nop':
+            ++newState.programCounter;
+            break;
+        default:
+            console.log('Unknown instruction', instruction);
+    }
+    // console.log('State change', state, '->', newState);
+    return newState;
+}
+
+function runProgram(instructions, state) {
+    if (state === undefined) {
+        state = {
+            programCounter: 0,
+            accumulator: 0
+        };
+    }
+    const seenInstructions = new Set();
+    while (!seenInstructions.has(state.programCounter)
+           && state.programCounter !== instructions.length) {
+        seenInstructions.add(state.programCounter);
+        state = executeInstruction(state, instructions);
+    }
+    const terminates = state.programCounter === instructions.length;
+    return {state: state, terminates: terminates};
 }
