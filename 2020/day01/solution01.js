@@ -7,13 +7,13 @@ function main01(input) {
     const lines = splitIntoLines(input);
     const numbers = [];
     lines.forEach(line => numbers.push(Number(line)));
-    const selectedA = findPermutation(numbers, 2);
-    console.log('Found values for part A: ', selectedA);
-    const productA = multiply(selectedA);
-    const selectedB = findPermutation(numbers, 3);
-    console.log('Found values for part B: ', selectedB);
-    const productB = multiply(selectedB);
-    return {'Part A': productA, 'Part B': productB};
+    const selectedPart1 = findPermutation(numbers, 2);
+    console.log('Found values for part 1: ', selectedPart1);
+    const productPart1 = multiply(selectedPart1);
+    const selectedPart2 = findPermutation(numbers, 3);
+    console.log('Found values for part 2: ', selectedPart2);
+    const productPart2 = multiply(selectedPart2);
+    return {'Part 1': productPart1, 'Part 2': productPart2};
 }
 
 function multiply(numbers) {

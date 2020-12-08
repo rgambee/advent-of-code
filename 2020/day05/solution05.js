@@ -6,7 +6,7 @@ const LINE_REGEX = /^(?<row>[FB]{7})(?<col>[LR]{3})$/;
 function main05(input) {
     const lines = splitIntoLines(input);
 
-    let highestIdA = -1;
+    let highestIdPart1 = -1;
     const allIds = [];
     for (let line of lines) {
         const decoded = decodeLine(line);
@@ -14,15 +14,15 @@ function main05(input) {
             continue;
         }
         const decodedId = decodedToId(decoded);
-        if (decodedId > highestIdA) {
-            highestIdA = decodedId;
+        if (decodedId > highestIdPart1) {
+            highestIdPart1 = decodedId;
         }
         allIds.push(decodedId);
     }
 
-    let missingIdB = searchForMissingId(allIds);
+    let missingIdPart2 = searchForMissingId(allIds);
 
-    return {'Part A': highestIdA, 'Part B': missingIdB};
+    return {'Part 1': highestIdPart1, 'Part 2': missingIdPart2};
 }
 
 function decodeLine(line) {

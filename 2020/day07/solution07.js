@@ -28,10 +28,10 @@ function main07(input) {
         }
     }
 
-    const colorsPartA = findContainingColors(SELECTED_COLOR, allBags, {});
-    const countPartB = countContainedBags(SELECTED_COLOR, allBags, {});
+    const colorsPart1 = findContainingColors(SELECTED_COLOR, allBags, {});
+    const countPart2 = countContainedBags(SELECTED_COLOR, allBags, {});
 
-    return {'Part A': colorsPartA.size, 'Part B': countPartB};
+    return {'Part 1': colorsPart1.size, 'Part 2': countPart2};
 }
 
 function findContainingColors(color, allBags, memo) {

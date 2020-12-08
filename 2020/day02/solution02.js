@@ -5,26 +5,26 @@ const LINE_REGEX = /^(?<min>[0-9]+)-(?<max>[0-9]+) (?<letter>[a-z]): (?<password
 
 function main02(input) {
     const lines = splitIntoLines(input);
-    let validCountA = 0;
-    let validCountB = 0;
+    let validCountPart1 = 0;
+    let validCountPart2 = 0;
     for (let line of lines) {
         const match = line.match(LINE_REGEX);
         if (!match) {
             continue;
         }
-        if (isValidA(match.groups.min, match.groups.max,
-                     match.groups.letter, match.groups.password)) {
-            ++validCountA;
+        if (isValidPart1(match.groups.min, match.groups.max,
+                         match.groups.letter, match.groups.password)) {
+            ++validCountPart1;
         }
-        if (isValidB(match.groups.min, match.groups.max,
-                     match.groups.letter, match.groups.password)) {
-            ++validCountB;
+        if (isValidPart2(match.groups.min, match.groups.max,
+                         match.groups.letter, match.groups.password)) {
+            ++validCountPart2;
         }
     }
-    return {'Part A': validCountA, 'Part B': validCountB};
+    return {'Part 1': validCountPart1, 'Part 2': validCountPart2};
 }
 
-function isValidA(minCount, maxCount, letter, password) {
+function isValidPart1(minCount, maxCount, letter, password) {
     let letterCount = 0;
     const letterMatch = password.match(new RegExp(letter, 'g'));
     if (letterMatch) {
@@ -33,7 +33,7 @@ function isValidA(minCount, maxCount, letter, password) {
     return (minCount <= letterCount && letterCount <= maxCount);
 }
 
-function isValidB(firstIndex1, secondIndex1, letter, password) {
+function isValidPart2(firstIndex1, secondIndex1, letter, password) {
     const firstIndex0 = firstIndex1 - 1;
     const secondIndex0 = secondIndex1 - 1;
     if (firstIndex0 < 0 || firstIndex0 >= password.length

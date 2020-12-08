@@ -13,17 +13,17 @@ function main04(input) {
     };
 
     const lines = splitIntoLines(input, false);
-    let validCountA = 0;
-    let validCountB = 0;
+    let validCountPart1 = 0;
+    let validCountPart2 = 0;
     let passport = {};
 
     for (let line of lines) {
         if (line.length == 0) {
             console.log('Passport: ', passport);
-            if (isPassportValidA(passport, Object.keys(fieldValidators))) {
-                ++validCountA;
-                if (isPassportValidB(passport, fieldValidators)) {
-                    ++validCountB;
+            if (isPassportValidPart1(passport, Object.keys(fieldValidators))) {
+                ++validCountPart1;
+                if (isPassportValidPart2(passport, fieldValidators)) {
+                    ++validCountPart2;
                 }
             } else {
                 console.log('Invalid: missing field(s)');
@@ -34,7 +34,7 @@ function main04(input) {
         }
     }
 
-    return {'Part A': validCountA, 'Part B': validCountB};
+    return {'Part 1': validCountPart1, 'Part 2': validCountPart2};
 }
 
 function updatePassport(passport, line) {
@@ -44,12 +44,12 @@ function updatePassport(passport, line) {
     }
 }
 
-function isPassportValidA(passport, fields) {
+function isPassportValidPart1(passport, fields) {
     return fields.filter(field => field in passport).length == fields.length;
 }
 
-function isPassportValidB(passport, fieldValidators) {
-    if (!isPassportValidA(passport, Object.keys(fieldValidators))) {
+function isPassportValidPart2(passport, fieldValidators) {
+    if (!isPassportValidPart1(passport, Object.keys(fieldValidators))) {
         return false;
     }
     for (let field in fieldValidators) {

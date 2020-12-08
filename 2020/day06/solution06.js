@@ -6,14 +6,14 @@ function main06(input) {
 
     let anyYes = new Set();
     let allYes = null;
-    let anyCountA = 0;
-    let allCountB = 0;
+    let anyCountPart1 = 0;
+    let allCountPart2 = 0;
 
     for (let line of lines) {
         if (line.length == 0) {
             console.log('Counting answers', anyYes, allYes);
-            anyCountA += anyYes.size;
-            allCountB += allYes.size;
+            anyCountPart1 += anyYes.size;
+            allCountPart2 += allYes.size;
             anyYes.clear();
             allYes = null;
         } else {
@@ -27,7 +27,7 @@ function main06(input) {
         }
     }
 
-    return {'Part A': anyCountA, 'Part B': allCountB};
+    return {'Part 1': anyCountPart1, 'Part 2': allCountPart2};
 }
 
 function stringToSet(inputString, startingSet) {
