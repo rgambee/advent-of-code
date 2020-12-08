@@ -1,4 +1,4 @@
-export {readFile, splitIntoLines, setIntersection};
+export {readFile, splitIntoLines, setIntersection, setUnion};
 
 function readFile(fileName, callback) {
     console.log('Reading from ', fileName);
@@ -33,4 +33,12 @@ function setIntersection(setA, setB) {
         }
     }
     return intersection;
+}
+
+function setUnion(setA, setB) {
+    const union = new Set(setA);
+    for (let item of setB) {
+        union.add(item);
+    }
+    return union;
 }
