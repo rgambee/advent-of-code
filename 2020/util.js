@@ -1,4 +1,4 @@
-export {readFile, splitIntoLines};
+export {readFile, splitIntoLines, setIntersection};
 
 function readFile(fileName, callback) {
     console.log('Reading from ', fileName);
@@ -23,4 +23,14 @@ function splitIntoLines(fileContents, stripEmptyLines=true) {
         lines = lines.filter(line => line.length > 0);
     }
     return lines;
+}
+
+function setIntersection(setA, setB) {
+    const intersection = new Set();
+    for (let item of setA) {
+        if (setB.has(item)) {
+            intersection.add(item);
+        }
+    }
+    return intersection;
 }

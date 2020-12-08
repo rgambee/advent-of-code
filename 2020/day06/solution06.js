@@ -1,4 +1,4 @@
-import {splitIntoLines} from '../util.js';
+import {splitIntoLines, setIntersection} from '../util.js';
 export default main06;
 
 function main06(input) {
@@ -22,7 +22,7 @@ function main06(input) {
             if (allYes === null) {
                 allYes = stringToSet(line);
             } else {
-                allYes = intersection(allYes, stringToSet(line));
+                allYes = setIntersection(allYes, stringToSet(line));
             }
         }
     }
@@ -39,14 +39,4 @@ function stringToSet(inputString, startingSet) {
         set.add(letter);
     }
     return set;
-}
-
-function intersection(setA, setB) {
-    const intersection = new Set();
-    for (let item of setA) {
-        if (setB.has(item)) {
-            intersection.add(item);
-        }
-    }
-    return intersection;
 }
