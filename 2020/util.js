@@ -1,6 +1,6 @@
 export {
-    readFile, splitIntoLines, setIntersection, setUnion, parseProgram,
-    executeInstruction, runProgram
+    readFile, splitIntoLines, sumArray, setIntersection, setUnion,
+    parseProgram, executeInstruction, runProgram
 };
 
 function readFile(fileName, callback) {
@@ -26,6 +26,11 @@ function splitIntoLines(fileContents, stripEmptyLines=true) {
         lines = lines.filter(line => line.length > 0);
     }
     return lines;
+}
+
+function sumArray(array) {
+    return array.reduce(
+        (runningSum, currentValue) => runningSum + currentValue);
 }
 
 function setIntersection(setA, setB) {
