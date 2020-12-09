@@ -6,7 +6,7 @@ function main08(input) {
     const instructions = parseProgram(lines);
 
     let programResult = runProgram(instructions);
-    const accumulatorPartA = programResult.state.accumulator;
+    const accumulatorPart1 = programResult.state.accumulator;
 
     let startingIndex = 0;
     while (!programResult.terminates) {
@@ -15,7 +15,7 @@ function main08(input) {
         programResult = runProgram(updated.program);
     }
 
-    return {'Part 1': accumulatorPartA,
+    return {'Part 1': accumulatorPart1,
             'Part 2': programResult.state.accumulator};
 }
 
