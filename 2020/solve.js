@@ -2,7 +2,7 @@
 
 import {readFile} from './util.js';
 
-const DAY_NUMBER = 9;
+const DAY_NUMBER = 10;
 const NUM_STARS = DAY_NUMBER * 2;
 
 function main() {
