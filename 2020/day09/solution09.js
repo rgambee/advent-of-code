@@ -46,19 +46,16 @@ function isValidAt(numbers, index) {
 }
 
 function findSequence(numbers, desiredSum) {
-    for (let i = 0; i < numbers.length; ++i) {
-        for (let j = i + 2; j < numbers.length; ++j) {
-            const slice = numbers.slice(i, j);
-            const sum = sumArray(slice);
-            if (sum === desiredSum) {
-                console.log('Sequence found', slice);
-                return slice;
-            }
-            if (sum >= desiredSum) {
-                // console.log('Sum too large:', sum, '== sum(', slice, ')');
-                break;
-            }
-            // console.log('Sum too small:', sum, '== sum(', slice, ')');
+    let start = 0;
+    let end = 1;
+    let sliceSum = sumArray(numbers.slice(start, end));
+    while (sliceSum !== desiredSum) {
+        if (sliceSum < desiredSum) {
+            ++end;
+        } else {
+            ++start;
         }
+        sliceSum = sumArray(numbers.slice(start, end));
     }
+    return numbers.slice(start, end);
 }
