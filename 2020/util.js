@@ -1,6 +1,6 @@
 export {
     readFile, splitIntoLines, sumArray, setIntersection, setUnion,
-    parseProgram, executeInstruction, runProgram
+    parseProgram, executeInstruction, runProgram, gcd, lcm
 };
 
 function readFile(fileName, callback) {
@@ -126,4 +126,20 @@ function runProgram(instructions, state) {
     }
     const terminates = state.programCounter === instructions.length;
     return {state: state, terminates: terminates};
+}
+
+function gcd(a, b) {
+    // Greatest common divisor using Euclid's algorithm
+    // https://en.wikipedia.org/wiki/Euclidean_algorithm
+    while (b != 0) {
+        const temp = b;
+        b = a % b;
+        a = temp;
+    }
+    return a;
+}
+
+function lcm(a, b) {
+    // https://en.wikipedia.org/wiki/Least_common_multiple
+    return (a / gcd(a, b)) * b;
 }
