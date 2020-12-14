@@ -1,4 +1,4 @@
-import {splitIntoLines} from '../util.js';
+import {splitIntoLines, toBinary} from '../util.js';
 export default main10;
 
 
@@ -56,12 +56,4 @@ function countArrangements(consecutiveDiffBy1, memo) {
     console.log('Result: ', count);
     memo[consecutiveDiffBy1] = count;
     return count;
-}
-
-function toBinary(number, width) {
-    let binary = number.toString(2);
-    while (width !== undefined && binary.length < width) {
-        binary = '0'.concat(binary);
-    }
-    return binary;
 }

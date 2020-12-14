@@ -1,6 +1,6 @@
 export {
     readFile, splitIntoLines, sumArray, setIntersection, setUnion,
-    parseProgram, executeInstruction, runProgram, gcd, lcm
+    parseProgram, executeInstruction, runProgram, gcd, lcm, toBinary
 };
 
 function readFile(fileName, callback) {
@@ -142,4 +142,12 @@ function gcd(a, b) {
 function lcm(a, b) {
     // https://en.wikipedia.org/wiki/Least_common_multiple
     return (a / gcd(a, b)) * b;
+}
+
+function toBinary(number, width) {
+    let binary = number.toString(2);
+    while (width !== undefined && binary.length < width) {
+        binary = '0'.concat(binary);
+    }
+    return binary;
 }
