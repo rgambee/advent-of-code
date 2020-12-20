@@ -17,6 +17,7 @@
                 "CallExpression": {
                     "arguments": "first"
                 },
+                "ImportDeclaration": "first",
                 "ObjectExpression":"first",
                 "SwitchCase": 1
             }
