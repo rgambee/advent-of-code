@@ -1,4 +1,5 @@
-import {splitIntoLines} from '../util.js';
+import {splitIntoLines, createCoord, coordToString, coordFromString,
+        getNeighboringCoords} from '../util.js';
 export default main17;
 
 // I'd like to use a custom class (or even an Array!) for representing
@@ -62,68 +63,6 @@ function oneStep(grid) {
     }
     console.log('Checked', seen.size, 'coordinates');
     return newGrid;
-}
-
-function createCoord(x, y, z, w) {
-    if (w === undefined) {
-        return [x, y, z];
-    }
-    return [x, y, z, w];
-}
-
-function coordToString(coord) {
-    return coord.toString();
-}
-
-function coordFromString(str) {
-    return str.split(',').map(s => Number(s));
-}
-
-function getNeighboringCoords(coord) {
-    if (coord.length === 3) {
-        return getNeighboringCoords3d(coord);
-    } else if (coord.length === 4) {
-        return getNeighboringCoords4d(coord);
-    }
-    throw new Error('Invalid coordinate length');
-}
-
-function getNeighboringCoords3d(coord) {
-    const neighbors = [];
-    const [x, y, z] = coord;
-    for (let i = x - 1; i <= x + 1; ++i) {
-        for (let j = y - 1; j <= y + 1; ++j) {
-            for (let k = z - 1; k <= z + 1; ++k) {
-                if (i === x && j === y && k === z) {
-                    continue;
-                }
-                neighbors.push(createCoord(i, j, k));
-            }
-        }
-    }
-    if (neighbors.length != 26) {
-        throw new Error('Number of 3D neighbors is not 26');
-    }
-    return neighbors;
-}
-
-function getNeighboringCoords4d(coord) {
-    const neighbors4d = [];
-    const [x, y, z, w] = coord;
-    const neighbords3d = getNeighboringCoords3d(coord.slice(0, 3));
-    for (let l = w - 1; l <= w + 1; ++l) {
-        for (const neigh3d of neighbords3d) {
-            neighbors4d.push(neigh3d.concat([l]));
-        }
-    }
-    // neighbors3d doesn't contain [x, y, z], so we need to add the
-    // two points "above" and "below" that explicity.
-    neighbors4d.push(createCoord(x, y, z, w - 1));
-    neighbors4d.push(createCoord(x, y, z, w + 1));
-    if (neighbors4d.length != 80) {
-        throw new Error('Number of 4D neighbors is not 80');
-    }
-    return neighbors4d;
 }
 
 function countActiveNeighbors(grid, coord) {
