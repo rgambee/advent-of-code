@@ -154,6 +154,9 @@ function toBinary(number, width) {
 }
 
 function createCoord(x, y, z, w) {
+    if (z === undefined) {
+        return [x, y];
+    }
     if (w === undefined) {
         return [x, y, z];
     }
@@ -172,31 +175,52 @@ function coordFromString(str) {
 }
 
 function getNeighboringCoords(coord) {
-    if (coord.length === 3) {
-        return getNeighboringCoords3d(coord);
-    } else if (coord.length === 4) {
-        return getNeighboringCoords4d(coord);
+    switch (coord.length) {
+        case 2:
+            return getNeighboringCoords2d(coord);
+        case 3:
+            return getNeighboringCoords3d(coord);
+        case 4:
+            return getNeighboringCoords4d(coord);
+        default:
+            throw new Error('Invalid coordinate length');
     }
-    throw new Error('Invalid coordinate length');
+}
+
+function getNeighboringCoords2d(coord) {
+    const neighbors = [];
+    const [x, y] = coord;
+    for (let i = x - 1; i <= x + 1; ++i) {
+        for (let j = y - 1; j <= y + 1; ++j) {
+            if (i === x && j === y) {
+                continue;
+            }
+            neighbors.push(createCoord(i, j));
+        }
+    }
+    if (neighbors.length != 8) {
+        throw new Error('Number of 2D neighbors is not 8');
+    }
+    return neighbors;
 }
 
 function getNeighboringCoords3d(coord) {
-    const neighbors = [];
+    const neighbors3d = [];
     const [x, y, z] = coord;
-    for (let i = x - 1; i <= x + 1; ++i) {
-        for (let j = y - 1; j <= y + 1; ++j) {
-            for (let k = z - 1; k <= z + 1; ++k) {
-                if (i === x && j === y && k === z) {
-                    continue;
-                }
-                neighbors.push(createCoord(i, j, k));
-            }
+    const neighbors2d = getNeighboringCoords2d(coord.slice(0, 2));
+    for (let k = z - 1; k <= z + 1; ++k) {
+        for (const neigh2d of neighbors2d) {
+            neighbors3d.push(neigh2d.concat([k]));
         }
     }
-    if (neighbors.length != 26) {
+    // neighbors2d doesn't contain [x, y], so we need to add the
+    // two points in front of and behind that explicitly.
+    neighbors3d.push(createCoord(x, y, z - 1));
+    neighbors3d.push(createCoord(x, y, z + 1));
+    if (neighbors3d.length != 26) {
         throw new Error('Number of 3D neighbors is not 26');
     }
-    return neighbors;
+    return neighbors3d;
 }
 
 function getNeighboringCoords4d(coord) {
