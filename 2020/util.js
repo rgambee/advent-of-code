@@ -1,7 +1,8 @@
 export {
     readFile, splitIntoLines, sumArray, setIntersection, setUnion,
     parseProgram, executeInstruction, runProgram, gcd, lcm, toBinary,
-    createCoord, coordToString, coordFromString, getNeighboringCoords
+    reverseString, createCoord, coordToString, coordFromString,
+    getNeighboringCoords
 };
 
 function readFile(fileName, callback) {
@@ -151,6 +152,10 @@ function toBinary(number, width) {
         binary = '0'.concat(binary);
     }
     return binary;
+}
+
+function reverseString(string) {
+    return string.split('').reverse().join('');
 }
 
 function createCoord(x, y, z, w) {
