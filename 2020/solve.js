@@ -2,8 +2,8 @@
 
 import {readFile} from './util.js';
 
-const DAY_NUMBER = 24;
-const NUM_STARS = DAY_NUMBER * 2;
+const DAY_NUMBER = 25;
+const NUM_STARS = Math.min(DAY_NUMBER * 2, 49);
 
 function main() {
     document.getElementById('favicon-link').href = generateFavicon(NUM_STARS);
