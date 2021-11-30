@@ -1,0 +1,23 @@
+{
+  "name": "aoc2020",
+  "version": "1.0.0",
+  "description": "Solutions to Advent of Code, 2020",
+  "main": "solve.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rgambee/advent-of-code.git"
+  },
+  "author": "Robert Gambee",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rgambee/advent-of-code/issues"
+  },
+  "homepage": "https://github.com/rgambee/advent-of-code#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "eslint": "^7.14.0"
+  }
+}
