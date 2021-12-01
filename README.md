@@ -13,3 +13,4 @@ with. So far I've done
 * 2018: Go
 * 2019: C++
 * 2020: Javascript
+* 2021: Rust
