@@ -12,10 +12,8 @@ fn main() {
     let mut triplet_increase_count = 0;
     for line in line_iter {
         recent.push_back(line.parse().unwrap());
-        if recent.len() > 1 {
-            if recent[recent.len() - 2] < recent[recent.len() - 1] {
-                singlet_increase_count += 1;
-            }
+        if recent.len() > 1 && recent[recent.len() - 2] < recent[recent.len() - 1] {
+            singlet_increase_count += 1;
         }
         if recent.len() > 3 {
             let oldest = recent.pop_front().unwrap();
