@@ -1,8 +1,9 @@
+use crate::util;
 use std::fs;
 use std::iter::FromIterator;
 use std::path;
 
-pub fn solve(input_path: path::PathBuf) {
+pub fn solve(input_path: path::PathBuf) -> util::Solution {
     let contents = fs::read_to_string(&input_path)
         .unwrap_or_else(|_| panic!("Failed to read input file {:?}", input_path));
     let line_iter = contents.lines();
@@ -21,7 +22,7 @@ pub fn solve(input_path: path::PathBuf) {
             println!("Failed to parse distance, skipping: {}", line);
             continue;
         }
-        let dist: i32 = dist.unwrap();
+        let dist: i64 = dist.unwrap();
         match dir {
             "forward" => {
                 horizontal += dist;
@@ -39,17 +40,14 @@ pub fn solve(input_path: path::PathBuf) {
     let part1_product = depth_part1 * horizontal;
     let part2_product = depth_part2 * horizontal;
 
-    println!("PART 1");
-    println!("Horizontal distance: {}, depth {}", horizontal, depth_part1);
-    println!(
-        "Product of depth and horizontal distance: {}",
-        part1_product
-    );
-    println!();
-    println!("PART 2");
-    println!("Horizontal distance: {}, depth {}", horizontal, depth_part2);
-    println!(
-        "Product of depth and horizontal distance: {}",
-        part2_product
-    );
+    util::Solution(
+        Some(util::PartialSolution {
+            message: String::from("Product of depth and horizontal distance"),
+            answer: part1_product,
+        }),
+        Some(util::PartialSolution {
+            message: String::from("Product of depth and horizontal distance"),
+            answer: part2_product,
+        }),
+    )
 }

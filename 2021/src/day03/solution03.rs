@@ -1,8 +1,9 @@
+use crate::util;
 use std::convert::TryFrom;
 use std::fs;
 use std::path;
 
-fn char_to_int(c: char) -> Option<i32> {
+fn char_to_int(c: char) -> Option<i64> {
     match c {
         '0' => Some(0),
         '1' => Some(1),
@@ -10,16 +11,16 @@ fn char_to_int(c: char) -> Option<i32> {
     }
 }
 
-fn invert_binary_vector(v: &[i32]) -> Vec<i32> {
+fn invert_binary_vector(v: &[i64]) -> Vec<i64> {
     v.iter().map(|b| 1 - b).collect()
 }
 
-fn binary_vector_to_int(v: &[i32]) -> i32 {
+fn binary_vector_to_int(v: &[i64]) -> i64 {
     v.iter().fold(0, |acc, b| acc * 2 + b)
 }
 
-fn most_common_bits(lines: &[Vec<i32>]) -> Vec<i32> {
-    let mut bit_counts: Vec<i32> = Vec::new();
+fn most_common_bits(lines: &[Vec<i64>]) -> Vec<i64> {
+    let mut bit_counts: Vec<i64> = Vec::new();
     for line in lines.iter() {
         if bit_counts.is_empty() {
             bit_counts.resize(line.len(), 0);
@@ -37,14 +38,14 @@ fn most_common_bits(lines: &[Vec<i32>]) -> Vec<i32> {
     }
     bit_counts
         .iter()
-        .map(|c| (2 * c) / i32::try_from(lines.len()).unwrap())
+        .map(|c| (2 * c) / i64::try_from(lines.len()).unwrap())
         .collect()
 }
 
-pub fn solve(input_path: path::PathBuf) {
+pub fn solve(input_path: path::PathBuf) -> util::Solution {
     let contents = fs::read_to_string(&input_path)
         .unwrap_or_else(|_| panic!("Failed to read input file {:?}", input_path));
-    let lines: Vec<Vec<i32>> = contents
+    let lines: Vec<Vec<i64>> = contents
         .lines()
         .map(|l| l.chars().map(|c| char_to_int(c).unwrap()).collect())
         .collect();
@@ -84,9 +85,14 @@ pub fn solve(input_path: path::PathBuf) {
     println!("Oxygen rating: {}", oxygen_value);
     println!("CO2 scrubber rating: {}", co2_scrubber_value);
 
-    println!("PART 1");
-    println!("Power consumption: {}", gamma_value * epsilon_value);
-    println!();
-    println!("PART 2");
-    println!("Life support rating: {}", oxygen_value * co2_scrubber_value);
+    util::Solution(
+        Some(util::PartialSolution {
+            message: String::from("Power consumption"),
+            answer: gamma_value * epsilon_value,
+        }),
+        Some(util::PartialSolution {
+            message: String::from("Life support rating"),
+            answer: oxygen_value * co2_scrubber_value,
+        }),
+    )
 }

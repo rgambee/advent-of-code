@@ -4,6 +4,7 @@ use std::path;
 mod day01;
 mod day02;
 mod day03;
+mod util;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -19,10 +20,11 @@ fn main() {
     ]
     .iter()
     .collect();
-    match day_number {
+    let solution = match day_number {
         1 => day01::solve(input_path),
         2 => day02::solve(input_path),
         3 => day03::solve(input_path),
-        _ => (),
+        _ => panic!("Invalid day number {}", day_number),
     };
+    print!("{}", solution);
 }

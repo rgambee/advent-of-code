@@ -1,8 +1,9 @@
+use crate::util;
 use std::collections::VecDeque;
 use std::fs;
 use std::path;
 
-pub fn solve(input_path: path::PathBuf) {
+pub fn solve(input_path: path::PathBuf) -> util::Solution {
     let contents = fs::read_to_string(&input_path)
         .unwrap_or_else(|_| panic!("Failed to read input file {:?}", input_path));
     let line_iter = contents.lines();
@@ -22,9 +23,14 @@ pub fn solve(input_path: path::PathBuf) {
         }
     }
 
-    println!("PART 1");
-    println!("Found {} singlet increases", singlet_increase_count);
-    println!();
-    println!("PART 2");
-    println!("Found {} triplet increases", triplet_increase_count);
+    util::Solution(
+        Some(util::PartialSolution {
+            message: String::from("Number of singlet increases"),
+            answer: singlet_increase_count,
+        }),
+        Some(util::PartialSolution {
+            message: String::from("Number of triplet increases"),
+            answer: triplet_increase_count,
+        }),
+    )
 }
