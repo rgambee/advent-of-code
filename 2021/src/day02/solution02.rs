@@ -1,11 +1,10 @@
-use std::env;
 use std::fs;
 use std::iter::FromIterator;
+use std::path;
 
-fn main() {
-    let args: Vec<String> = env::args().collect();
-    let filename = &args[1];
-    let contents = fs::read_to_string(filename).unwrap();
+pub fn solve(input_path: path::PathBuf) {
+    let contents = fs::read_to_string(&input_path)
+        .unwrap_or_else(|_| panic!("Failed to read input file {:?}", input_path));
     let line_iter = contents.lines();
     let mut horizontal = 0;
     let mut depth_part1 = 0;

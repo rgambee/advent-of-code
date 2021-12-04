@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
-use std::env;
 use std::fs;
+use std::path;
 
 fn char_to_int(c: char) -> Option<i32> {
     match c {
@@ -41,10 +41,9 @@ fn most_common_bits(lines: &[Vec<i32>]) -> Vec<i32> {
         .collect()
 }
 
-fn main() {
-    let args: Vec<String> = env::args().collect();
-    let filename = &args[1];
-    let contents = fs::read_to_string(filename).unwrap();
+pub fn solve(input_path: path::PathBuf) {
+    let contents = fs::read_to_string(&input_path)
+        .unwrap_or_else(|_| panic!("Failed to read input file {:?}", input_path));
     let lines: Vec<Vec<i32>> = contents
         .lines()
         .map(|l| l.chars().map(|c| char_to_int(c).unwrap()).collect())
