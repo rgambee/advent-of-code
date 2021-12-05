@@ -4,6 +4,7 @@ use std::path;
 mod day01;
 mod day02;
 mod day03;
+mod day04;
 mod util;
 
 fn main() {
@@ -24,6 +25,7 @@ fn main() {
         1 => day01::solve(input_path),
         2 => day02::solve(input_path),
         3 => day03::solve(input_path),
+        4 => day04::solve(input_path),
         _ => panic!("Invalid day number {}", day_number),
     };
     print!("{}", solution);
