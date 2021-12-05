@@ -16,6 +16,7 @@ fn main() {
         .parse()
         .unwrap_or_else(|_| panic!("Usage: {} DAY_NUMBER", args[0]));
     let input_path: path::PathBuf = [
+        String::from("src"),
         format!("day{:02}", day_number),
         format!("input{:02}.txt", day_number),
     ]
