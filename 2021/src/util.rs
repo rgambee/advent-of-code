@@ -24,3 +24,7 @@ impl fmt::Display for Solution {
         Ok(())
     }
 }
+
+pub fn digit_vector_to_int(v: &[i64], base: i64) -> i64 {
+    v.iter().fold(0, |acc, d| acc * base + d)
+}

@@ -15,10 +15,6 @@ fn invert_binary_vector(v: &[i64]) -> Vec<i64> {
     v.iter().map(|b| 1 - b).collect()
 }
 
-fn binary_vector_to_int(v: &[i64]) -> i64 {
-    v.iter().fold(0, |acc, b| acc * 2 + b)
-}
-
 fn most_common_bits(lines: &[Vec<i64>]) -> Vec<i64> {
     let mut bit_counts: Vec<i64> = Vec::new();
     for line in lines.iter() {
@@ -51,8 +47,8 @@ pub fn solve(input_path: path::PathBuf) -> util::Solution {
         .collect();
 
     let gamma_vec = most_common_bits(&lines);
-    let gamma_value = binary_vector_to_int(&gamma_vec);
-    let epsilon_value = binary_vector_to_int(&invert_binary_vector(&gamma_vec));
+    let gamma_value = util::digit_vector_to_int(&gamma_vec, 2);
+    let epsilon_value = util::digit_vector_to_int(&invert_binary_vector(&gamma_vec), 2);
     println!("Gamma value: {}", gamma_value);
     println!("Epsilon value: {}", epsilon_value);
 
@@ -80,8 +76,8 @@ pub fn solve(input_path: path::PathBuf) -> util::Solution {
                 .collect();
         }
     }
-    let oxygen_value = binary_vector_to_int(&oxygen_ratings[0]);
-    let co2_scrubber_value = binary_vector_to_int(&co2_scrubber_ratings[0]);
+    let oxygen_value = util::digit_vector_to_int(&oxygen_ratings[0], 2);
+    let co2_scrubber_value = util::digit_vector_to_int(&co2_scrubber_ratings[0], 2);
     println!("Oxygen rating: {}", oxygen_value);
     println!("CO2 scrubber rating: {}", co2_scrubber_value);
 
