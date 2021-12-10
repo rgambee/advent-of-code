@@ -117,7 +117,6 @@ pub fn solve(input_path: path::PathBuf) -> util::Solution {
                 }
             }
         }
-        println!("Output value is {}", output_value);
         output_sum += output_value
     }
 
