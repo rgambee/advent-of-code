@@ -42,15 +42,10 @@ pub fn solve(input_path: path::PathBuf) -> util::Solution {
     for row_index in 0..grid.len() {
         for col_index in 0..grid[row_index].len() {
             let height = grid[row_index][col_index];
-            // For this problem, locations that are diagonally adjacent do not count
-            // as neighbors. Therefore, we should call util::get_cardinal_neighbors()
-            // instead of util::get_all_neighbors(). However, when I do so, I get the
-            // wrong answer for part 1. I need to look into this further to figure out
-            // what's going wrong.
-            let neighbors = util::get_all_neighbors(&grid, (row_index, col_index));
+            let neighbors = util::get_cardinal_neighbors(&grid, (row_index, col_index));
             let mut local_minimum = true;
             for neigh in neighbors {
-                if *util::at(&grid, neigh).unwrap() < height {
+                if *util::at(&grid, neigh).unwrap() <= height {
                     local_minimum = false;
                     break;
                 }
