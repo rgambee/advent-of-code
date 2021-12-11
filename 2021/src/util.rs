@@ -28,3 +28,47 @@ impl fmt::Display for Solution {
 pub fn digit_vector_to_int(v: &[i64], base: i64) -> i64 {
     v.iter().fold(0, |acc, d| acc * base + d)
 }
+
+pub type Point2D = (usize, usize);
+pub type Grid2D = Vec<Vec<i64>>;
+pub type GridSlice2D = [Vec<i64>];
+
+pub fn at(grid: &GridSlice2D, location: Point2D) -> Option<&i64> {
+    if let Some(row) = grid.get(location.0) {
+        return row.get(location.1);
+    }
+    None
+}
+
+pub fn get_cardinal_neighbors(grid: &GridSlice2D, center: Point2D) -> Vec<Point2D> {
+    get_neighbors(grid, center, false)
+}
+
+pub fn get_all_neighbors(grid: &GridSlice2D, center: Point2D) -> Vec<Point2D> {
+    get_neighbors(grid, center, true)
+}
+
+fn get_neighbors(grid: &GridSlice2D, center: Point2D, include_diagonals: bool) -> Vec<Point2D> {
+    let mut neighbors: Vec<Point2D> = Vec::new();
+    for i in -1..2 {
+        if i < 0 && center.0 == 0 {
+            continue;
+        }
+        for j in -1..2 {
+            if j < 0 && center.1 == 0 {
+                continue;
+            }
+            let neigh = (
+                ((center.0 as i64) + i) as usize,
+                ((center.1 as i64) + j) as usize,
+            );
+            if !include_diagonals && neigh.0 != center.0 && neigh.1 != center.1 {
+                continue;
+            }
+            if neigh != center && at(grid, neigh).is_some() {
+                neighbors.push(neigh);
+            }
+        }
+    }
+    neighbors
+}
