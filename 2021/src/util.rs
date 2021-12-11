@@ -40,6 +40,13 @@ pub fn at(grid: &GridSlice2D, location: Point2D) -> Option<&i64> {
     None
 }
 
+pub fn at_mut(grid: &mut GridSlice2D, location: Point2D) -> Option<&mut i64> {
+    if let Some(row) = grid.get_mut(location.0) {
+        return row.get_mut(location.1);
+    }
+    None
+}
+
 pub fn get_cardinal_neighbors(grid: &GridSlice2D, center: Point2D) -> Vec<Point2D> {
     get_neighbors(grid, center, false)
 }
