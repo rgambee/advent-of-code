@@ -13,6 +13,7 @@ mod day09;
 mod day10;
 mod day11;
 mod day12;
+mod day13;
 mod util;
 
 fn main() {
@@ -43,6 +44,7 @@ fn main() {
         10 => day10::solve(input_path),
         11 => day11::solve(input_path),
         12 => day12::solve(input_path),
+        13 => day13::solve(input_path),
         _ => panic!("Invalid day number {}", day_number),
     };
     print!("{}", solution);
