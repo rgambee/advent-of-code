@@ -68,8 +68,8 @@ fn enhance(
 ) -> (ImageType, BoundingBox) {
     let mut new_image: ImageType = HashMap::new();
     let mut new_bbox = BoundingBox::new();
-    for row in bbox.rmin - 2..bbox.rmax + 3 {
-        for col in bbox.cmin - 2..bbox.cmax + 3 {
+    for row in bbox.rmin - 1..bbox.rmax + 2 {
+        for col in bbox.cmin - 1..bbox.cmax + 2 {
             let location = (row, col);
             let index = get_enhancement_index(image, &location, default_pixel_value);
             // println!("({}, {}) index = {}, lit = {}", row, col, index, enhancement_algorithm[index]);
