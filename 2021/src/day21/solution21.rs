@@ -1,6 +1,7 @@
 use crate::util;
 use regex::Regex;
 use std::cmp;
+use std::collections::HashMap;
 use std::fs;
 use std::path;
 
@@ -17,6 +18,11 @@ struct Player {
     score: i64,
     remaining_rolls: i64,
 }
+
+// Order is (pawn_position, score).
+// I'd like to use a struct, but in order to use a struct as a HashMap key,
+// I'd have to implement Hash(), which I don't how to do intelligently.
+type QuantumState = (i64, i64);
 
 impl Player {
     fn take_deterministic_turn(&mut self, die: &mut DeterministicDie) -> i64 {
@@ -83,58 +89,79 @@ fn run_deterministic_game(player1_starting_position: i64, player2_starting_posit
     losing_player_score * die.roll_count
 }
 
-fn quantum_branch(mut player1: Player, mut player2: Player, die_roll: i64) -> (i64, i64) {
-    let active_player: &mut Player;
-    let inactive_player: &mut Player;
-    if player1.remaining_rolls > 0 {
-        active_player = &mut player1;
-        inactive_player = &mut player2;
+fn count_quantum_roll_totals(num_rolls: i64) -> HashMap<i64, i64> {
+    let mut totals: HashMap<i64, i64> = HashMap::new();
+    if num_rolls == 1 {
+        for i in 1..DIE_NUM_FACES_PART2 + 1 {
+            totals.insert(i, 1);
+        }
     } else {
-        active_player = &mut player2;
-        inactive_player = &mut player1;
-    }
-    active_player.move_pawn(die_roll);
-    active_player.remaining_rolls -= 1;
-    if active_player.remaining_rolls == 0 {
-        if active_player.update_score() >= WINNING_SCORE_PART2 {
-            // println!("Game complete");
-            if player1.score >= WINNING_SCORE_PART2 {
-                return (1, 0);
-            } else {
-                return (0, 1);
+        let subtotals = count_quantum_roll_totals(num_rolls - 1);
+        for (tot, count) in subtotals.iter() {
+            for i in 1..DIE_NUM_FACES_PART2 + 1 {
+                *totals.entry(tot + i).or_insert(0) += count;
             }
-        } else {
-            inactive_player.remaining_rolls = NUM_ROLLS_PER_TURN;
         }
     }
-    let mut result = (0, 0);
-    for roll in 1..4 {
-        let r = quantum_branch(player1.clone(), player2.clone(), roll);
-        result.0 += r.0;
-        result.1 += r.1;
-    }
-    result
+    totals
 }
 
-fn run_quantum_game(player1_starting_position: i64, player2_starting_position: i64) -> i64 {
-    let player1 = Player {
-        pawn_position: player1_starting_position,
-        score: 0,
-        remaining_rolls: NUM_ROLLS_PER_TURN,
-    };
-    let player2 = Player {
-        pawn_position: player2_starting_position,
-        score: 0,
-        remaining_rolls: 0,
-    };
-
-    let mut result = (0, 0);
-    for roll in 1..DIE_NUM_FACES_PART2 {
-        let r = quantum_branch(player1.clone(), player2.clone(), roll);
-        result.0 += r.0;
-        result.1 += r.1;
+fn update_quantum_state_possibilities(
+    possible_states: &HashMap<QuantumState, i64>,
+    roll_total_counts: &HashMap<i64, i64>,
+) -> HashMap<QuantumState, i64> {
+    let mut new_possible_states: HashMap<QuantumState, i64> = HashMap::new();
+    for (state, num_universes) in possible_states.iter() {
+        for (roll_total, count) in roll_total_counts.iter() {
+            let new_position = (state.0 + roll_total - 1) % BOARD_SIZE + 1;
+            let new_state = (new_position, state.1 + new_position);
+            *new_possible_states.entry(new_state).or_insert(0) += num_universes * count;
+        }
     }
-    cmp::max(result.0, result.1)
+    new_possible_states
+}
+
+fn count_wins(
+    states_a: &mut HashMap<QuantumState, i64>,
+    states_b: &HashMap<QuantumState, i64>,
+) -> i64 {
+    let states_a_copy = states_a.clone();
+    let mut wins_a = 0;
+    for (state, count) in states_a_copy.iter() {
+        if state.1 >= WINNING_SCORE_PART2 {
+            wins_a += count;
+            states_a.remove(state).unwrap();
+        }
+    }
+    let mut losses_b = 0;
+    for (state, count) in states_b.iter() {
+        if state.1 < WINNING_SCORE_PART2 {
+            losses_b += count;
+        }
+    }
+    wins_a * losses_b
+}
+
+fn simulate_quantum_outcomes(
+    player1_starting_position: i64,
+    player2_starting_position: i64,
+    quantum_rolls: &HashMap<i64, i64>,
+) -> (i64, i64) {
+    let mut player1_quantum_states = HashMap::from([((player1_starting_position, 0), 1)]);
+    let mut player2_quantum_states = HashMap::from([((player2_starting_position, 0), 1)]);
+    let mut player1_winning_universes = 0;
+    let mut player2_winning_universes = 0;
+    while !player1_quantum_states.is_empty() && !player2_quantum_states.is_empty() {
+        player1_quantum_states =
+            update_quantum_state_possibilities(&player1_quantum_states, quantum_rolls);
+        player1_winning_universes +=
+            count_wins(&mut player1_quantum_states, &player2_quantum_states);
+        player2_quantum_states =
+            update_quantum_state_possibilities(&player2_quantum_states, quantum_rolls);
+        player2_winning_universes +=
+            count_wins(&mut player2_quantum_states, &player1_quantum_states);
+    }
+    (player1_winning_universes, player2_winning_universes)
 }
 
 pub fn solve(input_path: path::PathBuf) -> util::Solution {
@@ -163,7 +190,14 @@ pub fn solve(input_path: path::PathBuf) -> util::Solution {
     let player2_starting_position = captures.name("pos").unwrap().as_str().parse().unwrap();
 
     let answer_part1 = run_deterministic_game(player1_starting_position, player2_starting_position);
-    let answer_part2 = run_quantum_game(player1_starting_position, player2_starting_position);
+
+    let quantum_rolls = count_quantum_roll_totals(NUM_ROLLS_PER_TURN);
+    let result = simulate_quantum_outcomes(
+        player1_starting_position,
+        player2_starting_position,
+        &quantum_rolls,
+    );
+    let answer_part2 = cmp::max(result.0, result.1);
 
     util::Solution(
         Some(util::PartialSolution {
