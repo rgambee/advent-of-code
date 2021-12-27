@@ -1,45 +1,45 @@
-inp w
-mul x 0
-add x z
-mod x 26
-div z 1
-add x 12
-eql x w
-eql x 0
-mul y 0
-add y 25
-mul y x
-add y 1
-mul z y
-mul y 0
-add y w
-add y 6
-mul y x
-add z y
-inp w
-mul x 0
-add x z
-mod x 26
-div z 1
-add x 10
-eql x w
-eql x 0
-mul y 0
-add y 25
-mul y x
-add y 1
-mul z y
-mul y 0
-add y w
-add y 6
-mul y x
-add z y
-inp w
-mul x 0
-add x z
-mod x 26
-div z 1
-add x 13
+inp w       // w = $0
+mul x 0     // x = x * 0
+add x z     // x = x + z = 0
+mod x 26    // x = x % 26 = 0
+div z 1     // z = z / 1 = 0
+add x 12    // x = x + 12 = 12
+eql x w     // x = x == 2 = 0
+eql x 0     // x = x == 0 = 1
+mul y 0     // y = y * 0 = 0
+add y 25    // y = y + 25 = 25
+mul y x     // y = y * x = 25
+add y 1     // y = y + 1 = 26
+mul z y     // z = z * y = 0
+mul y 0     // y = y * 0 = 0
+add y w     // y = y + w = $0
+add y 6     // y = y + 6 = $0 + 6
+mul y x     // y = y * x = $0 + 6
+add z y     // z = z + y = $0 + 6
+inp w       // w = $1
+mul x 0     // x = x * 0 = 0
+add x z     // x = x + z = $0 + 6
+mod x 26    // x = x % 26 = ($0 + 6) % 26
+div z 1     // z = z / 1 = $0 + 6
+add x 10    // x = x + 10 = ($0 + 6) % 26 + 10
+eql x w     // x = x == w = ($0 + 6) % 26 + 10 == $1
+eql x 0     // x = x == 0 = ($0 + 6) % 26 + 10 != $1
+mul y 0     // y = y * 0 = y
+add y 25    // y = y + 25 = 25
+mul y x     // y = y * x = ($0 + 6) % 26 + 10 != $1 ? 25 : 0
+add y 1     // y = y + 1 = ($0 + 6) % 26 + 10 != $1 ? 26 : 1
+mul z y     // z = z * y = ___
+mul y 0     // y = y * 0 = 0
+add y w     // y = y + w = $1
+add y 6     // y = y + 6 = $1 + 6
+mul y x     // y = y * x = ___
+add z y     // z = z + y = ___
+inp w       // w = $2
+mul x 0     // x = x * 0 = x
+add x z     // x = x + z = ___
+mod x 26    // x = x % 26 = ___
+div z 1     // z = z / 1 = ___
+add x 13    // x = x + 13 = ___
 eql x w
 eql x 0
 mul y 0
@@ -242,11 +242,11 @@ eql x w
 eql x 0
 mul y 0
 add y 25
-mul y x
-add y 1
-mul z y
-mul y 0
-add y w
-add y 15
-mul y x
-add z y
+mul y x     // y = y * x, 
+add y 1     // y = y + 1
+mul z y     // z = z * y, z == 0 || y == 0
+mul y 0     // y = 0
+add y w     // y = y + w, w = -15
+add y 15    // y = y + 15, y == -15
+mul y x     // y = y * x, x == 0 || y == 0
+add z y     // z = z + y, z == 0 && y == 0
