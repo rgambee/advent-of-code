@@ -3,6 +3,7 @@ use regex::Regex;
 use std::fs;
 use std::path;
 
+const MODEL_NUMBER_LENGTH: usize = 14;
 type RegisterType = [i64; 4];
 
 enum Instruction {
@@ -17,26 +18,6 @@ enum Instruction {
     ModReg(usize, usize),
     EqlLit(usize, i64),
     EqlReg(usize, usize),
-}
-
-fn run_instruction(
-    instr: Instruction,
-    registers: &mut RegisterType,
-    input_stream: &mut impl Iterator<Item = i64>,
-) {
-    match instr {
-        Instruction::Inp(a) => registers[a] = input_stream.next().unwrap(),
-        Instruction::AddLit(a, n) => registers[a] += n,
-        Instruction::AddReg(a, b) => registers[a] += registers[b],
-        Instruction::MulLit(a, n) => registers[a] *= n,
-        Instruction::MulReg(a, b) => registers[a] *= registers[b],
-        Instruction::DivLit(a, n) => registers[a] /= n,
-        Instruction::DivReg(a, b) => registers[a] /= registers[b],
-        Instruction::ModLit(a, n) => registers[a] %= n,
-        Instruction::ModReg(a, b) => registers[a] %= registers[b],
-        Instruction::EqlLit(a, n) => registers[a] = (registers[a] == n) as i64,
-        Instruction::EqlReg(a, b) => registers[a] += (registers[a] == registers[b]) as i64,
-    }
 }
 
 fn l2i(s: &str) -> usize {
@@ -116,6 +97,40 @@ fn decode_line(s: &str, regexes: &[Regex; 11]) -> Instruction {
     panic!("Could not parse {}", s);
 }
 
+fn run_instruction(
+    instr: &Instruction,
+    registers: &mut RegisterType,
+    input_stream: &mut impl Iterator<Item = i64>,
+) {
+    match instr {
+        Instruction::Inp(a) => registers[*a] = input_stream.next().unwrap(),
+        Instruction::AddLit(a, n) => registers[*a] += n,
+        Instruction::AddReg(a, b) => registers[*a] += registers[*b],
+        Instruction::MulLit(a, n) => registers[*a] *= n,
+        Instruction::MulReg(a, b) => registers[*a] *= registers[*b],
+        Instruction::DivLit(a, n) => registers[*a] /= n,
+        Instruction::DivReg(a, b) => registers[*a] /= registers[*b],
+        Instruction::ModLit(a, n) => registers[*a] %= n,
+        Instruction::ModReg(a, b) => registers[*a] %= registers[*b],
+        Instruction::EqlLit(a, n) => registers[*a] = (registers[*a] == *n) as i64,
+        Instruction::EqlReg(a, b) => registers[*a] = (registers[*a] == registers[*b]) as i64,
+    }
+}
+
+fn is_model_number_valid(
+    instructions: &[Instruction],
+    model_number: &mut impl Iterator<Item = i64>,
+) -> bool {
+    let mut registers = [0; 4];
+    for instr in instructions.iter() {
+        run_instruction(instr, &mut registers, model_number);
+    }
+    if model_number.next().is_some() {
+        println!("Warning: model number not fully consumed");
+    }
+    registers[3] == 0
+}
+
 pub fn solve(input_path: path::PathBuf) -> util::Solution {
     let instruction_regexes = [
         // Example: inp w
@@ -150,10 +165,28 @@ pub fn solve(input_path: path::PathBuf) -> util::Solution {
         .collect();
     println!("Parsed {} instructions", instructions.len());
 
+    let mut model_number = [9; MODEL_NUMBER_LENGTH];
+    let mut model_numbers_tried: i64 = 0;
+    while !is_model_number_valid(&instructions, &mut model_number.iter().copied()) {
+        model_numbers_tried += 1;
+        if model_numbers_tried % 10000000 == 0 {
+            println!("Tried {} model numbers", model_numbers_tried);
+        }
+        for i in (0..MODEL_NUMBER_LENGTH).rev() {
+            model_number[i] -= 1;
+            if model_number[i] == 0 {
+                model_number[i] = 9
+            } else {
+                break;
+            }
+        }
+    }
+    println!("Found valid model_number: {:?}", model_number);
+
     util::Solution(
         Some(util::PartialSolution {
             message: String::from("Largest acceptable model number"),
-            answer: 0,
+            answer: util::digit_vector_to_int(&model_number, 10),
         }),
         None,
     )
