@@ -131,6 +131,32 @@ fn is_model_number_valid(
     registers[3] == 0
 }
 
+fn search_for_valid_model_number(
+    instructions: &[Instruction],
+    mut model_number: [i64; MODEL_NUMBER_LENGTH],
+    delta: i64,
+) -> i64 {
+    let mut model_numbers_tried: i64 = 0;
+    while !is_model_number_valid(instructions, &mut model_number.iter().copied()) {
+        model_numbers_tried += 1;
+        if model_numbers_tried % 10000000 == 0 {
+            println!("Tried {} model numbers", model_numbers_tried);
+        }
+        for i in (0..model_number.len()).rev() {
+            model_number[i] += delta;
+            if model_number[i] == 10 {
+                model_number[i] = 1;
+            } else if model_number[i] == 0 {
+                model_number[i] = 9;
+            } else {
+                break;
+            }
+        }
+    }
+    println!("Found valid model_number: {:?}", model_number);
+    util::digit_vector_to_int(&model_number, 10)
+}
+
 pub fn solve(input_path: path::PathBuf) -> util::Solution {
     let instruction_regexes = [
         // Example: inp w
@@ -165,29 +191,19 @@ pub fn solve(input_path: path::PathBuf) -> util::Solution {
         .collect();
     println!("Parsed {} instructions", instructions.len());
 
-    let mut model_number = [9; MODEL_NUMBER_LENGTH];
-    let mut model_numbers_tried: i64 = 0;
-    while !is_model_number_valid(&instructions, &mut model_number.iter().copied()) {
-        model_numbers_tried += 1;
-        if model_numbers_tried % 10000000 == 0 {
-            println!("Tried {} model numbers", model_numbers_tried);
-        }
-        for i in (0..MODEL_NUMBER_LENGTH).rev() {
-            model_number[i] -= 1;
-            if model_number[i] == 0 {
-                model_number[i] = 9
-            } else {
-                break;
-            }
-        }
-    }
-    println!("Found valid model_number: {:?}", model_number);
+    let max_model_number =
+        search_for_valid_model_number(&instructions, [9; MODEL_NUMBER_LENGTH], -1);
+    let min_model_number =
+        search_for_valid_model_number(&instructions, [1; MODEL_NUMBER_LENGTH], 1);
 
     util::Solution(
         Some(util::PartialSolution {
             message: String::from("Largest acceptable model number"),
-            answer: util::digit_vector_to_int(&model_number, 10),
+            answer: max_model_number,
         }),
-        None,
+        Some(util::PartialSolution {
+            message: String::from("Smallest acceptable model number"),
+            answer: min_model_number,
+        }),
     )
 }
