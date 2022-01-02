@@ -1,200 +1,101 @@
 use crate::util;
-use regex::Regex;
-use std::fs;
 use std::path;
 
-const MODEL_NUMBER_LENGTH: usize = 14;
-type RegisterType = [i64; 4];
+// This solution makes many assumptions regarding the format of the input
+// instruction list. In fact, it doesn't even bother reading it. This allows
+// it to be much faster than a naive approach. For such a naive (but more
+// general) approach, see solution24-slow.rs.
 
-enum Instruction {
-    Inp(usize),
-    AddLit(usize, i64),
-    AddReg(usize, usize),
-    MulLit(usize, i64),
-    MulReg(usize, usize),
-    DivLit(usize, i64),
-    DivReg(usize, usize),
-    ModLit(usize, i64),
-    ModReg(usize, usize),
-    EqlLit(usize, i64),
-    EqlReg(usize, usize),
-}
+// The instruction list has the same pattern repeated 14 times.
+// It boils down to
+//      if z(i) % 26 + A(i) == N(i):
+//          z(i+1) = z(i) / C(i)
+//      else:
+//          z(i+1) = 26 * z(i) / C(i) + B(i) + I(i)
+// where t is the step number (0 to 13),
+//       z(i) is the value in register z at step t
+//       A(i), B(i) and C(i) are values specified in the input file that vary
+//          from step to step
+//       N(i) is the ith digit of the input number
 
-fn l2i(s: &str) -> usize {
-    match s {
-        "w" => 0,
-        "x" => 1,
-        "y" => 2,
-        "z" => 3,
-        _ => panic!("Unexpected letter {}", s),
-    }
-}
+// C(i) can either be 1 or 26. In order to end up with z(13) == 0, we need
+// to divide by 26 as many times as we can, which means satisfying the
+// conditional every time C(i) == 26.
 
-fn decode_line(s: &str, regexes: &[Regex; 11]) -> Instruction {
-    if let Some(cap) = regexes[0].captures(s) {
-        return Instruction::Inp(l2i(cap.name("a").unwrap().as_str()));
-    }
-    if let Some(cap) = regexes[1].captures(s) {
-        return Instruction::AddLit(
-            l2i(cap.name("a").unwrap().as_str()),
-            cap.name("n").unwrap().as_str().parse().unwrap(),
-        );
-    }
-    if let Some(cap) = regexes[2].captures(s) {
-        return Instruction::AddReg(
-            l2i(cap.name("a").unwrap().as_str()),
-            l2i(cap.name("b").unwrap().as_str()),
-        );
-    }
-    if let Some(cap) = regexes[3].captures(s) {
-        return Instruction::MulLit(
-            l2i(cap.name("a").unwrap().as_str()),
-            cap.name("n").unwrap().as_str().parse().unwrap(),
-        );
-    }
-    if let Some(cap) = regexes[4].captures(s) {
-        return Instruction::MulReg(
-            l2i(cap.name("a").unwrap().as_str()),
-            l2i(cap.name("b").unwrap().as_str()),
-        );
-    }
-    if let Some(cap) = regexes[5].captures(s) {
-        return Instruction::DivLit(
-            l2i(cap.name("a").unwrap().as_str()),
-            cap.name("n").unwrap().as_str().parse().unwrap(),
-        );
-    }
-    if let Some(cap) = regexes[6].captures(s) {
-        return Instruction::DivReg(
-            l2i(cap.name("a").unwrap().as_str()),
-            l2i(cap.name("b").unwrap().as_str()),
-        );
-    }
-    if let Some(cap) = regexes[7].captures(s) {
-        return Instruction::ModLit(
-            l2i(cap.name("a").unwrap().as_str()),
-            cap.name("n").unwrap().as_str().parse().unwrap(),
-        );
-    }
-    if let Some(cap) = regexes[8].captures(s) {
-        return Instruction::ModReg(
-            l2i(cap.name("a").unwrap().as_str()),
-            l2i(cap.name("b").unwrap().as_str()),
-        );
-    }
-    if let Some(cap) = regexes[9].captures(s) {
-        return Instruction::EqlLit(
-            l2i(cap.name("a").unwrap().as_str()),
-            cap.name("n").unwrap().as_str().parse().unwrap(),
-        );
-    }
-    if let Some(cap) = regexes[10].captures(s) {
-        return Instruction::EqlReg(
-            l2i(cap.name("a").unwrap().as_str()),
-            l2i(cap.name("b").unwrap().as_str()),
-        );
-    }
-    panic!("Could not parse {}", s);
-}
+// This constraint fixes 7 of the 14 digits to be exactly determined by the
+// other 7 digits. That narrows down the solution space from 9^14 ~= 10^13
+// to 9^7 ~= 10^6, which is small enough to search exhaustively. Although,
+// we don't need to consider all 9^7 possibilities. We can stop when we find
+// the max or min that works.
 
-fn run_instruction(
-    instr: &Instruction,
-    registers: &mut RegisterType,
-    input_stream: &mut impl Iterator<Item = i64>,
-) {
-    match instr {
-        Instruction::Inp(a) => registers[*a] = input_stream.next().unwrap(),
-        Instruction::AddLit(a, n) => registers[*a] += n,
-        Instruction::AddReg(a, b) => registers[*a] += registers[*b],
-        Instruction::MulLit(a, n) => registers[*a] *= n,
-        Instruction::MulReg(a, b) => registers[*a] *= registers[*b],
-        Instruction::DivLit(a, n) => registers[*a] /= n,
-        Instruction::DivReg(a, b) => registers[*a] /= registers[*b],
-        Instruction::ModLit(a, n) => registers[*a] %= n,
-        Instruction::ModReg(a, b) => registers[*a] %= registers[*b],
-        Instruction::EqlLit(a, n) => registers[*a] = (registers[*a] == *n) as i64,
-        Instruction::EqlReg(a, b) => registers[*a] = (registers[*a] == registers[*b]) as i64,
-    }
-}
+// These are the A, B, C values described above for my particular
+// instruction file.
+#[rustfmt::skip]
+const PARAMETERS: [(i64, i64, i64); 14] = [
+    ( 12,  6,  1),
+    ( 10,  6,  1),
+    ( 13,  3,  1),
+    (-11, 11, 26),
+    ( 13,  9,  1),
+    ( -1,  3, 26),
+    ( 10, 13,  1),
+    ( 11,  6,  1),
+    (  0, 14, 26),
+    ( 10, 10,  1),
+    ( -5, 12, 26),
+    (-16, 10, 26),
+    ( -7, 11, 26),
+    (-11, 15, 26),
+];
 
-fn is_model_number_valid(
-    instructions: &[Instruction],
-    model_number: &mut impl Iterator<Item = i64>,
-) -> bool {
-    let mut registers = [0; 4];
-    for instr in instructions.iter() {
-        run_instruction(instr, &mut registers, model_number);
+fn pick_next_digits(index: usize, z_curr: i64, maximize: bool) -> Option<Vec<i64>> {
+    if index == PARAMETERS.len() {
+        return Some(Vec::new());
     }
-    if model_number.next().is_some() {
-        println!("Warning: model number not fully consumed");
-    }
-    registers[3] == 0
-}
-
-fn search_for_valid_model_number(
-    instructions: &[Instruction],
-    mut model_number: [i64; MODEL_NUMBER_LENGTH],
-    delta: i64,
-) -> i64 {
-    let mut model_numbers_tried: i64 = 0;
-    while !is_model_number_valid(instructions, &mut model_number.iter().copied()) {
-        model_numbers_tried += 1;
-        if model_numbers_tried % 10000000 == 0 {
-            println!("Tried {} model numbers", model_numbers_tried);
-        }
-        for i in (0..model_number.len()).rev() {
-            model_number[i] += delta;
-            if model_number[i] == 10 {
-                model_number[i] = 1;
-            } else if model_number[i] == 0 {
-                model_number[i] = 9;
+    let (a, b, c) = PARAMETERS[index];
+    if c == 26 {
+        // Try to satisfy conditional described above
+        let next_digit = z_curr % 26 + a;
+        if (1..=9).contains(&next_digit) {
+            if let Some(mut following_digits) = pick_next_digits(index + 1, z_curr / 26, maximize) {
+                let mut digits = vec![next_digit];
+                digits.append(&mut following_digits);
+                return Some(digits);
             } else {
-                break;
+                return None;
+            }
+        } else {
+            // We can't meet the condition with a digit between 1 and 9.
+            // Return None to indicate this branch is a dead-end.
+            return None;
+        }
+    } else if c == 1 {
+        let mut next_digit = if maximize { 9 } else { 1 };
+        let adjustment = if maximize { -1 } else { 1 };
+        while (1..=9).contains(&next_digit) {
+            let z_next = 26 * z_curr / c + b + next_digit;
+            if let Some(mut following_digits) = pick_next_digits(index + 1, z_next, maximize) {
+                let mut digits = vec![next_digit];
+                digits.append(&mut following_digits);
+                return Some(digits);
+            } else {
+                next_digit += adjustment;
             }
         }
+        return None;
     }
-    println!("Found valid model_number: {:?}", model_number);
-    util::digit_vector_to_int(&model_number, 10)
+    panic!("Unexpected value for c: {}", c);
 }
 
-pub fn solve(input_path: path::PathBuf) -> util::Solution {
-    let instruction_regexes = [
-        // Example: inp w
-        Regex::new(r"^inp (?P<a>[w-z])$").unwrap(),
-        // Example: add x 12
-        Regex::new(r"^add (?P<a>[w-z]) (?P<n>-?\d+)$").unwrap(),
-        // Example: add x z
-        Regex::new(r"^add (?P<a>[w-z]) (?P<b>[w-z])$").unwrap(),
-        // Example: mul x 0
-        Regex::new(r"^mul (?P<a>[w-z]) (?P<n>-?\d+)$").unwrap(),
-        // Example: mul y x
-        Regex::new(r"^mul (?P<a>[w-z]) (?P<b>[w-z])$").unwrap(),
-        // Example: div z 1
-        Regex::new(r"^div (?P<a>[w-z]) (?P<n>-?\d+)$").unwrap(),
-        // Example: div w z
-        Regex::new(r"^div (?P<a>[w-z]) (?P<b>[w-z])$").unwrap(),
-        // Example: mod z 26
-        Regex::new(r"^mod (?P<a>[w-z]) (?P<n>-?\d+)$").unwrap(),
-        // Example: mod x y
-        Regex::new(r"^mod (?P<a>[w-z]) (?P<b>[w-z])$").unwrap(),
-        // Example: eql x 0
-        Regex::new(r"^eql (?P<a>[w-z]) (?P<n>-?\d+)$").unwrap(),
-        // Example: eql x w
-        Regex::new(r"^eql (?P<a>[w-z]) (?P<b>[w-z])$").unwrap(),
-    ];
-
-    let contents = fs::read_to_string(&input_path)
-        .unwrap_or_else(|_| panic!("Failed to read input file {:?}", input_path));
-    let instructions: Vec<Instruction> = contents
-        .lines()
-        .map(|s| decode_line(s, &instruction_regexes))
-        .collect();
-    println!("Parsed {} instructions", instructions.len());
-
-    let max_model_number =
-        search_for_valid_model_number(&instructions, [9; MODEL_NUMBER_LENGTH], -1);
-    let min_model_number =
-        search_for_valid_model_number(&instructions, [1; MODEL_NUMBER_LENGTH], 1);
+pub fn solve(_: path::PathBuf) -> util::Solution {
+    let max_model_number = util::digit_vector_to_int(
+        &pick_next_digits(0, 0, true).expect("Unable to find maximum acceptable model number"),
+        10,
+    );
+    let min_model_number = util::digit_vector_to_int(
+        &pick_next_digits(0, 0, false).expect("Unable to find minimum acceptable model number"),
+        10,
+    );
 
     util::Solution(
         Some(util::PartialSolution {
