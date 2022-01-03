@@ -1,4 +1,5 @@
 use crate::util::{self, Point2D};
+use std::boxed::Box;
 use std::cmp;
 use std::collections::{BinaryHeap, HashMap};
 use std::fs;
@@ -28,16 +29,20 @@ struct AmphipodArrangement<'a> {
     energy_expended: i64,
     burrow: &'a BurrowType,
     movement_costs: &'a EnergyType,
+    predecessor: Option<Box<AmphipodArrangement<'a>>>,
 }
 
 impl AmphipodArrangement<'_> {
     fn estimate_total_energy(&self) -> i64 {
         // Heuristic for A* algorithm
-        // It assumes each amphipod only needs to reach the top-most
-        // cell of its side-room, which isn't correct.
+        // This assumes amphipods can move through each other, which isn't
+        // correct but still satisfactory since A* requires that the heuristic
+        // doesn't overesimate the true cost.
+        let mut amphs_in_rooms: HashMap<char, i64> = HashMap::new();
         let mut remaining_energy = 0;
         for (loc, amph) in self.amphipod_locations.iter() {
             let mut min_dist_to_dest = usize::MAX;
+            let mut curr_row = loc.0 as i64;
             // Measure the horizontal distance
             for (other_loc, cell) in self.burrow.iter() {
                 if let CellType::SideRoom(a) = cell {
@@ -45,17 +50,51 @@ impl AmphipodArrangement<'_> {
                         min_dist_to_dest = cmp::min(
                             min_dist_to_dest,
                             cmp::max(loc.1, other_loc.1) - cmp::min(loc.1, other_loc.1),
-                            // util::distance(loc, other_loc),
                         );
                     }
                 }
             }
-            // Add the vertical distance
             if min_dist_to_dest > 0 {
-                min_dist_to_dest += loc.0;
+                // Add the vertical distance to get out of the room
+                min_dist_to_dest += loc.0 - 1;
+                // Set curr_row to 1 to indicate that this amphipod needs to
+                // move into the hallway.
+                curr_row = 1;
+            } else {
+                // If this amphipod is already in its own side-room, check
+                // whether there are other amphipod types below which require
+                // it to move.
+                assert!(
+                    matches!(self.burrow.get(loc).unwrap(), CellType::SideRoom(a) if a == amph),
+                );
+                let amphipods_below = get_blocked_amphipods_in_sideroom(self, amph, loc);
+                let can_stay = amphipods_below.iter().all(|a| a == amph);
+                if !can_stay {
+                    // This amphipod needs to move into the hallway, which
+                    // requires loc.0 - 1 vertical moves. Then there are at
+                    // least 2 horizontal moves needed: 1 to step to the side
+                    // so that the room is unblocked and 1 more to go back.
+                    min_dist_to_dest = loc.0 + 1;
+                    // As above, set curr_row to 1 to indicate that this
+                    // amphipod needs to move into the hallway.
+                    curr_row = 1;
+                }
             }
-            let e = (min_dist_to_dest as i64) * self.movement_costs.get(amph).unwrap();
-            // println!("Energy to move {} @ {:?}: {}", amph, loc, e);
+            // Cast this to a signed number since it can be negative below;
+            let mut min_dist_to_dest = min_dist_to_dest as i64;
+            // Add the distance to move into the room (or move farther in if
+            // already there)
+            let count = amphs_in_rooms.entry(*amph).or_insert(0);
+            let final_row = get_sideroom_locations(self.burrow, amph).len() as i64 - *count + 1;
+            // This difference can be negative if this amphipod is already in
+            // its side-room, but we've already considered other amphipods of
+            // the same type. We've assumed that those other amphipods need to
+            // move into the room farther than they need to, and a negative
+            // difference here will correct for that.
+            min_dist_to_dest += final_row - curr_row;
+            *count += 1;
+
+            let e = min_dist_to_dest * self.movement_costs.get(amph).unwrap();
             remaining_energy += e;
         }
         self.energy_expended + remaining_energy
@@ -96,130 +135,293 @@ impl PartialOrd for AmphipodArrangement<'_> {
     }
 }
 
-fn get_neighbors(point: &Point2D, burrow: &BurrowType) -> Vec<Point2D> {
-    let mut neighbors: Vec<Point2D> = Vec::new();
-    for row in point.0 - 1..point.0 + 2 {
-        for col in point.1 - 1..point.1 + 2 {
-            if (row != point.0 && col != point.1) || (row == point.0 && col == point.1) {
-                continue;
-            }
-            if burrow.contains_key(&(row, col)) {
-                neighbors.push((row, col));
+// fn decode_location_vec(location_vec: &[(Point2D, char)]) -> LocationsType {
+//     let mut location_map: LocationsType = HashMap::new();
+//     for (loc, amph) in location_vec.iter() {
+//         location_map.insert(*loc, *amph);
+//     }
+//     location_map
+// }
+
+fn get_sideroom_locations(burrow: &BurrowType, room: &char) -> Vec<Point2D> {
+    let mut locations: Vec<Point2D> = Vec::new();
+    for (loc, cell) in burrow.iter() {
+        if matches!(cell, CellType::SideRoom(r) if r == room) {
+            locations.push(*loc);
+        }
+    }
+    locations
+}
+
+fn get_blocked_amphipods_in_sideroom(
+    arrangement: &AmphipodArrangement,
+    room: &char,
+    blocker_location: &Point2D,
+) -> Vec<char> {
+    // assert!(arrangement.amphipod_locations.get(blocker_location).unwrap() == room);
+    let mut amphipods: Vec<char> = Vec::new();
+    for loc in get_sideroom_locations(arrangement.burrow, room) {
+        assert_eq!(loc.1, blocker_location.1);
+        if loc.0 > blocker_location.0 {
+            if let Some(amph) = arrangement.amphipod_locations.get(&loc) {
+                amphipods.push(*amph);
             }
         }
     }
-    assert!(!neighbors.is_empty());
-    neighbors
+    amphipods
 }
 
-fn get_open_neighbors(
-    point: &Point2D,
+fn get_lowest_open_sideroom_location(
+    arrangement: &AmphipodArrangement,
+    room: &char,
+) -> Option<Point2D> {
+    let mut locs = get_sideroom_locations(arrangement.burrow, room);
+    locs.sort_unstable();
+    let mut lowest_loc = None;
+    for loc in locs.into_iter() {
+        if !arrangement.amphipod_locations.contains_key(&loc) {
+            lowest_loc = Some(loc);
+        } else {
+            break;
+        }
+    }
+    lowest_loc
+}
+
+fn get_open_hallway_locations(
+    arrangement: &AmphipodArrangement,
+    location: &Point2D,
+    include_cells_immediately_outside_rooms: bool,
+) -> Vec<Point2D> {
+    let mut open_locations: Vec<Point2D> = Vec::new();
+    for step in [-1, 1] {
+        let mut loc: Point2D = (location.0, (location.1 as i64 + step).try_into().unwrap());
+        while arrangement.burrow.contains_key(&loc)
+            && !arrangement.amphipod_locations.contains_key(&loc)
+        {
+            if matches!(arrangement.burrow.get(&loc).unwrap(), CellType::Hallway)
+                || include_cells_immediately_outside_rooms
+            {
+                open_locations.push(loc);
+            }
+            loc = (location.0, (loc.1 as i64 + step).try_into().unwrap());
+        }
+    }
+    open_locations
+}
+
+// fn get_neighbors(point: &Point2D, burrow: &BurrowType) -> Vec<Point2D> {
+//     let mut neighbors: Vec<Point2D> = Vec::new();
+//     for row in point.0 - 1..point.0 + 2 {
+//         for col in point.1 - 1..point.1 + 2 {
+//             if (row != point.0 && col != point.1) || (row == point.0 && col == point.1) {
+//                 continue;
+//             }
+//             if burrow.contains_key(&(row, col)) {
+//                 neighbors.push((row, col));
+//             }
+//         }
+//     }
+//     assert!(!neighbors.is_empty());
+//     neighbors
+// }
+
+// fn get_open_neighbors(
+//     point: &Point2D,
+//     amphipod_arrangement: &AmphipodArrangement,
+//     amphipod_type: &char,
+// ) -> Vec<(Point2D, i64)> {
+//     let burrow = &amphipod_arrangement.burrow;
+//     let movement_cost = amphipod_arrangement
+//         .movement_costs
+//         .get(amphipod_type)
+//         .unwrap();
+//     let mut open_neighbors: Vec<(Point2D, i64)> = Vec::new();
+//     let source_cell = burrow.get(point).unwrap();
+//     // If this amphipod is in its own side room and there are only matching
+//     // amphipods below, don't bother moving it out.
+//     if matches!(source_cell, CellType::SideRoom(a) if a == amphipod_type) {
+//         let amphipods_below =
+//             get_blocked_amphipods_in_sideroom(amphipod_arrangement, amphipod_type, point);
+//         if amphipods_below.iter().all(|a| a == amphipod_type) {
+//             // This amphipod doesn't need to move out.
+//             // See if it can move farther in.
+//             let mut dest = *point;
+//             while burrow.contains_key(&(dest.0 + 1, dest.1))
+//                 && !amphipod_arrangement
+//                     .amphipod_locations
+//                     .contains_key(&(dest.0 + 1, dest.1))
+//             {
+//                 dest = (dest.0 + 1, dest.1);
+//             }
+//             if &dest != point {
+//                 open_neighbors.push((dest, movement_cost * ((dest.0 - point.0) as i64)));
+//             }
+//             return open_neighbors;
+//         }
+//     }
+
+//     for neigh_loc in get_neighbors(point, burrow) {
+//         if amphipod_arrangement
+//             .amphipod_locations
+//             .contains_key(&neigh_loc)
+//         {
+//             // This cell is already occupied
+//             continue;
+//         }
+//         let neigh_cell = burrow.get(&neigh_loc).unwrap();
+//         match neigh_cell {
+//             CellType::Hallway => {
+//                 open_neighbors.push((neigh_loc, *movement_cost));
+//             }
+//             _ => {
+//                 if let CellType::SideRoom(dest) = neigh_cell {
+//                     if matches!(source_cell, CellType::ImmediatelyOutsideRoom) {
+//                         // We're considering moving into a room a side-room
+//                         // from the hallway.
+//                         if dest != amphipod_type {
+//                             // This side-room is for a different type of amphipod,
+//                             // so we can't move into it.
+//                             continue;
+//                         }
+//                         if get_blocked_amphipods_in_sideroom(
+//                             amphipod_arrangement,
+//                             amphipod_type,
+//                             &neigh_loc,
+//                         )
+//                         .iter()
+//                         .any(|a| a != amphipod_type)
+//                         {
+//                             // There are amphipods of other types in this room,
+//                             // so we can't enter yet.
+//                             continue;
+//                         }
+//                     }
+//                 }
+//                 // Recursively call get_open_neighbors().
+//                 // If we're exiting a side-room, this will move us fully
+//                 // out into the hallway so we're not blocking the room.
+//                 // If we're entering a side-room, this will move us in
+//                 // as far as we can go.
+
+//                 let mut arrangement_copy = amphipod_arrangement.clone();
+//                 // Pretend there's an amphipod at point to avoid
+//                 // going backward from neigh to point.
+//                 arrangement_copy
+//                     .amphipod_locations
+//                     .entry(*point)
+//                     .or_insert(*amphipod_type);
+//                 let neigh_neigh = get_open_neighbors(&neigh_loc, &arrangement_copy, amphipod_type);
+//                 if !neigh_neigh.is_empty() {
+//                     for (loc, cost) in neigh_neigh.into_iter() {
+//                         open_neighbors.push((loc, cost + *movement_cost));
+//                     }
+//                 } else {
+//                     // Can't keep going, so add this immediate neighbor instead
+//                     if !matches!(neigh_cell, CellType::ImmediatelyOutsideRoom) {
+//                         open_neighbors.push((neigh_loc, *movement_cost));
+//                     }
+//                 }
+//             }
+//         }
+//     }
+//     open_neighbors
+// }
+
+fn get_possible_moves(
+    location: &Point2D,
     amphipod_arrangement: &AmphipodArrangement,
-    amphipod_type: char,
+    amphipod_type: &char,
 ) -> Vec<(Point2D, i64)> {
     let burrow = &amphipod_arrangement.burrow;
     let movement_cost = amphipod_arrangement
         .movement_costs
-        .get(&amphipod_type)
+        .get(amphipod_type)
         .unwrap();
-    let mut open_neighbors: Vec<(Point2D, i64)> = Vec::new();
-    let source_cell = burrow.get(point).unwrap();
-    // If this amphipod is in its own side room and there are only matching
-    // amphipods below, don't bother moving it.
-    if matches!(source_cell, CellType::SideRoom(a) if *a == amphipod_type) {
-        let mut can_stay = true;
-        for row in point.0 + 1.. {
-            let down = (row, point.1);
-            if !burrow.contains_key(&down) {
-                break;
-            }
-            if let Some(a) = amphipod_arrangement.amphipod_locations.get(&down) {
-                if *a != amphipod_type {
-                    can_stay = false;
-                    break;
-                }
-            }
-        }
-        if can_stay {
-            let down = (point.0 + 1, point.1);
-            if burrow.contains_key(&down)
-                && !amphipod_arrangement.amphipod_locations.contains_key(&down)
+    let mut open_locations: Vec<(Point2D, i64)> = Vec::new();
+    let cell = burrow.get(location).unwrap();
+    match cell {
+        CellType::SideRoom(src) => {
+            if src != amphipod_type
+                || get_blocked_amphipods_in_sideroom(amphipod_arrangement, amphipod_type, location)
+                    .into_iter()
+                    .any(|a| &a != amphipod_type)
             {
-                open_neighbors.push((down, *movement_cost));
-            }
-            return open_neighbors;
-        }
-    }
-    for neigh_loc in get_neighbors(point, burrow) {
-        if amphipod_arrangement
-            .amphipod_locations
-            .contains_key(&neigh_loc)
-        {
-            // This cell is already occupied
-            continue;
-        }
-        let neigh_cell = burrow.get(&neigh_loc).unwrap();
-        match neigh_cell {
-            CellType::Hallway => {
-                open_neighbors.push((neigh_loc, *movement_cost));
-            }
-            _ => {
-                if let CellType::SideRoom(dest) = neigh_cell {
-                    if matches!(source_cell, CellType::ImmediatelyOutsideRoom)
-                        && *dest != amphipod_type
-                    {
-                        // This side-room is for a different type of amphipod,
-                        // so we can't move into it.
-                        continue;
-                    }
+                // This amphipod needs to move out into the hallway, either
+                // because it's in the wrong room or because it's blocking
+                // another amphipod that needs to move out.
+                let mut loc_immediately_outside_this_room = (location.0 - 1, location.1);
+                while !matches!(
+                    burrow.get(&loc_immediately_outside_this_room).unwrap(),
+                    CellType::ImmediatelyOutsideRoom,
+                ) {
+                    loc_immediately_outside_this_room =
+                        (loc_immediately_outside_this_room.0 - 1, location.1);
                 }
-                // Recursively call get_open_neighbors().
-                // If we're exiting a side-room, this will move us fully
-                // out into the hallway so we're not blocking the room.
-                // If we're entering a side-room, this will move us in
-                // as far as we can go.
-
-                let mut arrangement_copy = amphipod_arrangement.clone();
-                // Pretend there's an amphipod at point to avoid
-                // going backward from neigh to point.
-                arrangement_copy
-                    .amphipod_locations
-                    .entry(*point)
-                    .or_insert(amphipod_type);
-                let neigh_neigh = get_open_neighbors(&neigh_loc, &arrangement_copy, amphipod_type);
-                if !neigh_neigh.is_empty() {
-                    for (loc, cost) in neigh_neigh.into_iter() {
-                        open_neighbors.push((loc, cost + *movement_cost));
-                    }
-                } else {
-                    // Can't keep going, so add this immediate neighbor instead
-                    if !matches!(neigh_cell, CellType::ImmediatelyOutsideRoom) {
-                        open_neighbors.push((neigh_loc, *movement_cost));
+                for hallway_loc in get_open_hallway_locations(
+                    amphipod_arrangement,
+                    &loc_immediately_outside_this_room,
+                    false,
+                ) {
+                    let dist = util::distance(location, &hallway_loc) as i64;
+                    open_locations.push((hallway_loc, dist * movement_cost));
+                }
+            }
+        }
+        CellType::Hallway => {
+            // Move into sideroom if possible
+            if let Some(room_loc) =
+                get_lowest_open_sideroom_location(amphipod_arrangement, amphipod_type)
+            {
+                // The room has an open spot
+                if get_blocked_amphipods_in_sideroom(amphipod_arrangement, amphipod_type, &room_loc)
+                    .into_iter()
+                    .all(|a| &a == amphipod_type)
+                {
+                    // There aren't any other amphipod types in the room
+                    let hallway_locs =
+                        get_open_hallway_locations(amphipod_arrangement, location, true);
+                    if hallway_locs.into_iter().any(|loc| loc.1 == room_loc.1) {
+                        // There's a free path to the room
+                        let dist = util::distance(location, &room_loc) as i64;
+                        open_locations.push((room_loc, dist * movement_cost))
                     }
                 }
             }
         }
+        CellType::ImmediatelyOutsideRoom => {
+            panic!("Amphipod can't stop immediately outside room");
+        }
     }
-    open_neighbors
+    open_locations
 }
 
 fn reachable_amphipod_arrangements<'a, 'b>(
-    amphipod_arrangement: &'a AmphipodArrangement,
+    amphipod_arrangement: &'a AmphipodArrangement<'b>,
     burrow: &'b BurrowType,
     movement_costs: &'b EnergyType,
 ) -> Vec<(AmphipodArrangement<'b>, i64)> {
     let mut other_arrangements: Vec<(AmphipodArrangement, i64)> = Vec::new();
     for (amph_loc, amph) in amphipod_arrangement.amphipod_locations.iter() {
-        for (other_loc, cost) in get_open_neighbors(amph_loc, amphipod_arrangement, *amph).iter() {
+        for (other_loc, cost) in
+            get_possible_moves(amph_loc, amphipod_arrangement, amph).into_iter()
+        {
             let mut new_arrangement = AmphipodArrangement {
                 amphipod_locations: amphipod_arrangement.amphipod_locations.clone(),
                 energy_expended: amphipod_arrangement.energy_expended,
                 burrow,
                 movement_costs,
+                predecessor: Some(Box::new(amphipod_arrangement.clone())),
+                // predecessor: Some(Box::new(AmphipodArrangement {
+                //     amphipod_locations: amphipod_arrangement.amphipod_locations.clone(),
+                //     energy_expended: amphipod_arrangement.energy_expended,
+                //     burrow,
+                //     movement_costs,
+                //     predecessor: amphipod_arrangement.predecessor.as_ref(),
             };
             new_arrangement.amphipod_locations.remove(amph_loc);
-            new_arrangement.amphipod_locations.insert(*other_loc, *amph);
-            other_arrangements.push((new_arrangement, *cost));
+            new_arrangement.amphipod_locations.insert(other_loc, *amph);
+            other_arrangements.push((new_arrangement, cost));
         }
     }
     other_arrangements
@@ -251,20 +453,29 @@ fn organize(initial_amphipod_arrangement: &AmphipodArrangement) -> i64 {
     let mut i = 0;
     while !arrangement_heap.is_empty() {
         let curr_arrangement = arrangement_heap.pop().unwrap();
-        // println!(
-        //     "Considering arrangement with cost {}",
-        //     curr_arrangement.estimate_total_energy(),
-        // );
-        // println!(
-        //     "{}, {}, {}",
-        //     arrangement_heap.len(),
-        //     arrangement_energies.len(),
-        //     curr_arrangement.estimate_total_energy(),
-        // );
-        // print_arrangement(&curr_arrangement);
+        if i % 100000 == 0 {
+            println!(
+                "Considering arrangement with cost {}",
+                curr_arrangement.estimate_total_energy(),
+            );
+            println!(
+                "{}, {}, {}",
+                arrangement_heap.len(),
+                arrangement_energies.len(),
+                curr_arrangement.estimate_total_energy(),
+            );
+        }
         if are_amphipods_organized(&curr_arrangement) {
             println!("Found solution in {} iterations", i);
-            return curr_arrangement.energy_expended;
+            let result = curr_arrangement.energy_expended;
+            print_arrangement(&curr_arrangement);
+            // let mut predecessor = Some(Box::new(curr_arrangement));
+            // while let Some(arr_to_print) = predecessor {
+            //     println!("Predecessor with energy {}", arr_to_print.energy_expended);
+            //     print_arrangement(&arr_to_print);
+            //     predecessor = arr_to_print.predecessor;
+            // }
+            return result;
         }
         for (mut other_arr, cost) in reachable_amphipod_arrangements(
             &curr_arrangement,
@@ -368,11 +579,13 @@ pub fn solve(input_path: path::PathBuf) -> util::Solution {
             }
         }
     }
+
     let amphipod_arrangement_part1 = AmphipodArrangement {
         amphipod_locations,
         energy_expended: 0,
         burrow: &burrow_part1,
         movement_costs: &energy_costs,
+        predecessor: None,
     };
     let (burrow_part2, locations_part2) = modify_burrow_for_part2(&amphipod_arrangement_part1);
     let amphipod_arrangement_part2 = AmphipodArrangement {
@@ -380,6 +593,7 @@ pub fn solve(input_path: path::PathBuf) -> util::Solution {
         energy_expended: 0,
         burrow: &burrow_part2,
         movement_costs: &energy_costs,
+        predecessor: None,
     };
 
     println!("Initial arrangement for part 1");

@@ -1,3 +1,4 @@
+use std::cmp;
 use std::fmt;
 
 pub struct PartialSolution {
@@ -32,6 +33,14 @@ pub fn digit_vector_to_int(v: &[i64], base: i64) -> i64 {
 pub type Point2D = (usize, usize);
 pub type Grid2D = Vec<Vec<i64>>;
 pub type GridSlice2D = [Vec<i64>];
+
+#[rustfmt::skip]
+pub fn distance(point_a: &Point2D, point_b: &Point2D) -> usize {
+    cmp::max(point_a.0, point_b.0) -
+    cmp::min(point_a.0, point_b.0) +
+    cmp::max(point_a.1, point_b.1) -
+    cmp::min(point_a.1, point_b.1)
+}
 
 pub fn at(grid: &GridSlice2D, location: Point2D) -> Option<&i64> {
     if let Some(row) = grid.get(location.0) {
