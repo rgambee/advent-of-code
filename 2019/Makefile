@@ -17,4 +17,4 @@ all: ${EXECUTABLES}
 
 
 clean:
-	rm ${EXECUTABLES}
+	rm -f ${EXECUTABLES}
